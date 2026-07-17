@@ -12,6 +12,19 @@ export const ESPECES_PAR_DEFAUT = [
   "Pigeon",
 ] as const;
 
+/** Un morceau de viande distribuable : libellé + code court pour le récap. */
+export type Morceau = { label: string; code: string };
+
+/** Morceaux proposés par défaut à la création d'un cahier (modifiables ensuite). */
+export const MORCEAUX_PAR_DEFAUT: Morceau[] = [
+  { label: "Gigot", code: "g" },
+  { label: "Épaule", code: "e" },
+  { label: "Gigot+côte", code: "gc" },
+  { label: "Filet", code: "f" },
+  { label: "Côtes", code: "C" },
+  { label: "Rognons", code: "r" },
+];
+
 /** Calcule la saison de chasse courante, ex. "2025/2026" (bascule au 1er juin). */
 export function saisonCourante(now = new Date()): string {
   const y = now.getFullYear();

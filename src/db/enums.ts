@@ -22,3 +22,10 @@ export const validationTypeEnum = pgEnum("validation_type", [
 
 /** Timbre grand gibier : national OU départemental (exclusif). */
 export const timbreEnum = pgEnum("timbre_gg_type", ["NATIONAL", "DEPARTEMENTAL"]);
+
+/** Type de bénéficiaire d'une distribution de gibier. */
+export const distributionRecipientEnum = pgEnum("distribution_recipient", [
+  "PARTICIPANT",
+  "PROPRIETAIRE",
+  "INVITE",
+]);

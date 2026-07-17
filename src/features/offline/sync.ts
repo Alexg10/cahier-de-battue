@@ -4,6 +4,7 @@ import {
   getDB,
   participantKey,
   pointageKey,
+  type LocalDistribution,
   type LocalInvite,
   type LocalParticipant,
   type LocalPointage,
@@ -11,6 +12,7 @@ import {
 } from "./db";
 import type {
   BattueSnapshot,
+  SyncDistribution,
   SyncInvite,
   SyncParticipant,
   SyncPrelevement,
@@ -36,6 +38,7 @@ export async function mergeSnapshot(snap: BattueSnapshot) {
     cahier: snap.cahier,
     presidentId: snap.presidentId,
     participants: snap.participants,
+    proprietaires: snap.proprietaires,
     pulledAt: now(),
   });
 
@@ -81,6 +84,7 @@ export async function mergeSnapshot(snap: BattueSnapshot) {
 
   await mergeById(db.invites, battueId, snap.invites);
   await mergeById(db.prelevements, battueId, snap.prelevements);
+  await mergeById(db.distributions, battueId, snap.distributions);
 
   // Délégation.
   const localDeleg = await db.delegation.get(battueId);
@@ -103,7 +107,7 @@ async function mergeById<T extends { id: string; dirty: 0 | 1 }>(
     where: (i: string) => { equals: (v: string) => { toArray: () => Promise<T[]> } };
   },
   battueId: string,
-  serverRows: (SyncInvite | SyncPrelevement)[],
+  serverRows: (SyncInvite | SyncPrelevement | SyncDistribution)[],
 ) {
   const serverIds = new Set(serverRows.map((r) => r.id));
   for (const r of serverRows) {
@@ -160,17 +164,19 @@ function stripRow<T extends { dirty: 0 | 1 }>(r: T) {
 
 async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
   const db = getDB();
-  const [pts, invs, prels, parts, deleg] = await Promise.all([
+  const [pts, invs, prels, parts, dists, deleg] = await Promise.all([
     db.pointages.where("battueId").equals(battueId).toArray(),
     db.invites.where("battueId").equals(battueId).toArray(),
     db.prelevements.where("battueId").equals(battueId).toArray(),
     db.participants.where("battueId").equals(battueId).toArray(),
+    db.distributions.where("battueId").equals(battueId).toArray(),
     db.delegation.get(battueId),
   ]);
   const dirtyPts = pts.filter((p) => p.dirty === 1);
   const dirtyInvs = invs.filter((i) => i.dirty === 1);
   const dirtyPrels = prels.filter((p) => p.dirty === 1);
   const dirtyParts = parts.filter((p) => p.dirty === 1);
+  const dirtyDists = dists.filter((d) => d.dirty === 1);
   const dirtyDeleg = deleg?.dirty === 1 ? deleg : null;
 
   if (
@@ -178,6 +184,7 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
     !dirtyInvs.length &&
     !dirtyPrels.length &&
     !dirtyParts.length &&
+    !dirtyDists.length &&
     !dirtyDeleg
   ) {
     return null;
@@ -194,6 +201,7 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
     invites: dirtyInvs.map(stripRow) as LocalInvite[],
     prelevements: dirtyPrels.map(stripRow) as LocalPrelevement[],
     participants: dirtyParts.map(stripParticipant),
+    distributions: dirtyDists.map(stripRow) as LocalDistribution[],
   };
 }
 
@@ -231,6 +239,9 @@ export async function sync(battueId: string): Promise<boolean> {
           p.updatedAt,
         ]),
       );
+      const pushedDist = new Map(
+        (body.distributions ?? []).map((d) => [d.id, d.updatedAt]),
+      );
       const pushedDeleg = body.delegation?.updatedAt ?? null;
 
       const res = await fetch(`/api/sync/battue/${battueId}`, {
@@ -259,6 +270,11 @@ export async function sync(battueId: string): Promise<boolean> {
         const l = await db.participants.get(key);
         if (l && l.updatedAt === up)
           await db.participants.update(key, { dirty: 0 });
+      }
+      for (const [id, up] of pushedDist) {
+        const l = await db.distributions.get(id);
+        if (l && l.updatedAt === up)
+          await db.distributions.update(id, { dirty: 0 });
       }
       if (pushedDeleg) {
         const l = await db.delegation.get(battueId);
@@ -466,6 +482,38 @@ export async function updateParticipantInfo(
   if (!existing) return;
   await db.participants.update(key, {
     ...info,
+    updatedAt: now(),
+    dirty: 1,
+  });
+  triggerSync(battueId);
+}
+
+export async function addDistribution(
+  battueId: string,
+  recipientType: SyncDistribution["recipientType"],
+  recipientId: string,
+  morceau: string,
+) {
+  const db = getDB();
+  const id = uuid();
+  await db.distributions.put({
+    id,
+    battueId,
+    recipientType,
+    recipientId,
+    morceau,
+    updatedAt: now(),
+    deletedAt: null,
+    dirty: 1,
+  });
+  triggerSync(battueId);
+  return id;
+}
+
+export async function removeDistribution(battueId: string, id: string) {
+  const db = getDB();
+  await db.distributions.update(id, {
+    deletedAt: now(),
     updatedAt: now(),
     dirty: 1,
   });

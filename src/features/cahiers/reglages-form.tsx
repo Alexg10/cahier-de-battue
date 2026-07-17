@@ -7,6 +7,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updateCahier, type FormState } from "./actions";
+import type { Morceau } from "./constants";
 
 type Cahier = {
   id: string;
@@ -17,6 +18,7 @@ type Cahier = {
   reglesSecurite: string;
   cotisationChasse: string;
   cotisationChiens: string;
+  morceaux: Morceau[];
 };
 
 export function ReglagesForm({ cahier }: { cahier: Cahier }) {
@@ -26,6 +28,19 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
   );
   const [especes, setEspeces] = useState<string[]>(cahier.especes);
   const [nouvelle, setNouvelle] = useState("");
+  const [morceaux, setMorceaux] = useState<Morceau[]>(cahier.morceaux);
+  const [mLabel, setMLabel] = useState("");
+  const [mCode, setMCode] = useState("");
+
+  function ajouterMorceau() {
+    const label = mLabel.trim();
+    const code = mCode.trim();
+    if (label && code && !morceaux.some((m) => m.code === code)) {
+      setMorceaux((prev) => [...prev, { label, code }]);
+      setMLabel("");
+      setMCode("");
+    }
+  }
 
   function ajouter() {
     const v = nouvelle.trim();
@@ -45,6 +60,7 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
       {especes.map((e) => (
         <input key={e} type="hidden" name="especes" value={e} />
       ))}
+      <input type="hidden" name="morceaux" value={JSON.stringify(morceaux)} />
 
       <Field label="Nom de la société de chasse" htmlFor="nom" required>
         <Input id="nom" name="nom" required defaultValue={cahier.nom} />
@@ -152,6 +168,68 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
             placeholder="Ajouter une espèce"
           />
           <Button type="button" variant="secondary" size="icon" onClick={ajouter}>
+            <Plus />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-semibold">
+          Morceaux de la distribution
+        </span>
+        <p className="text-sm text-muted-foreground">
+          Libellé + code court (utilisé dans le récap : g, e, gc…).
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {morceaux.length === 0 ? (
+            <span className="text-sm text-muted-foreground">Aucun morceau.</span>
+          ) : (
+            morceaux.map((m) => (
+              <span
+                key={m.code}
+                className="inline-flex items-center gap-1 rounded-full bg-accent py-1 pl-3 pr-1 text-sm font-medium text-accent-foreground"
+              >
+                {m.label}{" "}
+                <span className="text-muted-foreground">({m.code})</span>
+                <button
+                  type="button"
+                  aria-label={`Retirer ${m.label}`}
+                  onClick={() =>
+                    setMorceaux((prev) => prev.filter((x) => x.code !== m.code))
+                  }
+                  className="flex size-5 items-center justify-center rounded-full hover:bg-background/60"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={mLabel}
+            onChange={(ev) => setMLabel(ev.target.value)}
+            placeholder="Morceau (ex. Gigot)"
+            className="flex-1"
+          />
+          <Input
+            value={mCode}
+            onChange={(ev) => setMCode(ev.target.value)}
+            onKeyDown={(ev) => {
+              if (ev.key === "Enter") {
+                ev.preventDefault();
+                ajouterMorceau();
+              }
+            }}
+            placeholder="Code"
+            className="w-24"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            onClick={ajouterMorceau}
+          >
             <Plus />
           </Button>
         </div>

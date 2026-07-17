@@ -6,6 +6,7 @@ import { formatDateLong } from "@/lib/format";
 import type { BattueSnapshot } from "./types";
 import { ConsignesCard } from "./consignes-card";
 import { OfflineDelegation } from "./offline-delegation";
+import { OfflineDistribution } from "./offline-distribution";
 import { OfflineInvites } from "./offline-invites";
 import { OfflinePointage } from "./offline-pointage";
 import { OfflinePrelevements } from "./offline-prelevements";
@@ -31,6 +32,20 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
     // On ne re-synchronise pas sur changement de snapshot (participants stables).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battueId]);
+
+  // « Réchauffe » le cache du service worker avec le HTML complet de cette page.
+  // La navigation SPA ne met en cache que le fragment RSC ; sans ça, un
+  // rechargement hors-ligne de la battue tomberait sur l'écran hors-ligne.
+  useEffect(() => {
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.onLine &&
+      "serviceWorker" in navigator &&
+      navigator.serviceWorker.controller
+    ) {
+      fetch(window.location.href, { cache: "reload" }).catch(() => {});
+    }
+  }, []);
 
   const { participants, presidentId, battue, cahier } = snapshot;
   const chasseurs = participants.filter((p) => p.estChasseur);
@@ -116,6 +131,23 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
             battueId={battueId}
             especes={especes}
             chasseurs={chasseurs}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribution du gibier</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Gigot attribué d&apos;office au tireur ; ajoutez les autres morceaux.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <OfflineDistribution
+            battueId={battueId}
+            participants={chasseurs}
+            proprietaires={snapshot.proprietaires}
+            morceaux={cahier.morceaux}
           />
         </CardContent>
       </Card>

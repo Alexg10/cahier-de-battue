@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { cahiers, participants } from "@/db/schema";
 import { parseParticipantsFile } from "@/features/participants/import";
 import { requireUser } from "@/lib/session";
-import { ESPECES_PAR_DEFAUT } from "./constants";
+import { ESPECES_PAR_DEFAUT, MORCEAUX_PAR_DEFAUT } from "./constants";
 
 export type FormState = { error?: string } | undefined;
 
@@ -54,6 +54,7 @@ export async function createCahier(
       territoire: parsed.data.territoire,
       saison: parsed.data.saison,
       especes: [...ESPECES_PAR_DEFAUT],
+      morceaux: MORCEAUX_PAR_DEFAUT,
     })
     .returning({ id: cahiers.id });
 
@@ -87,12 +88,32 @@ const montant = z
   )
   .transform((s) => (s === "" ? "0.00" : Number(s).toFixed(2)));
 
+// Liste des morceaux, transmise en JSON par le formulaire.
+const morceaux = z.preprocess(
+  (v) => {
+    try {
+      return JSON.parse(String(v ?? "[]"));
+    } catch {
+      return [];
+    }
+  },
+  z
+    .array(
+      z.object({
+        label: z.string().trim().min(1),
+        code: z.string().trim().min(1),
+      }),
+    )
+    .default([]),
+);
+
 const updateSchema = cahierSchema.extend({
   id: z.string().uuid(),
   especes: z.array(z.string().trim().min(1)).default([]),
   reglesSecurite: z.string().trim().default(""),
   cotisationChasse: montant,
   cotisationChiens: montant,
+  morceaux,
 });
 
 export async function updateCahier(
@@ -110,6 +131,7 @@ export async function updateCahier(
     reglesSecurite: formData.get("reglesSecurite") ?? "",
     cotisationChasse: formData.get("cotisationChasse") ?? "",
     cotisationChiens: formData.get("cotisationChiens") ?? "",
+    morceaux: formData.get("morceaux") ?? "[]",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };
@@ -118,6 +140,10 @@ export async function updateCahier(
   // Espèces : nettoyage (dédoublonnage, suppression des vides).
   const especes = Array.from(
     new Set(parsed.data.especes.map((e) => e.trim()).filter(Boolean)),
+  );
+  // Morceaux : dédoublonnage par code.
+  const morceaux = parsed.data.morceaux.filter(
+    (m, i, arr) => arr.findIndex((x) => x.code === m.code) === i,
   );
 
   await db
@@ -130,6 +156,7 @@ export async function updateCahier(
       reglesSecurite: parsed.data.reglesSecurite,
       cotisationChasse: parsed.data.cotisationChasse,
       cotisationChiens: parsed.data.cotisationChiens,
+      morceaux,
     })
     .where(and(eq(cahiers.id, parsed.data.id), eq(cahiers.userId, user.id)));
 

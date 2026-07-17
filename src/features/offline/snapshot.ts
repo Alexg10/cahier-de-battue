@@ -5,10 +5,12 @@ import {
   battues,
   bureauMembres,
   cahiers,
+  distributions,
   invites,
   participants,
   pointages,
   prelevements,
+  proprietaires,
 } from "@/db/schema";
 import type { BattueSnapshot } from "./types";
 
@@ -39,8 +41,15 @@ export async function battueSnapshot(
     .limit(1);
   if (!cahierRow) return null;
 
-  const [participantRows, presidentRow, pointageRows, inviteRows, prelevementRows] =
-    await Promise.all([
+  const [
+    participantRows,
+    presidentRow,
+    pointageRows,
+    inviteRows,
+    prelevementRows,
+    proprietaireRows,
+    distributionRows,
+  ] = await Promise.all([
       db
         .select()
         .from(participants)
@@ -81,6 +90,25 @@ export async function battueSnapshot(
             isNull(prelevements.deletedAt),
           ),
         ),
+      db
+        .select()
+        .from(proprietaires)
+        .where(
+          and(
+            eq(proprietaires.cahierId, cahierId),
+            isNull(proprietaires.deletedAt),
+          ),
+        )
+        .orderBy(asc(proprietaires.nom), asc(proprietaires.prenom)),
+      db
+        .select()
+        .from(distributions)
+        .where(
+          and(
+            eq(distributions.battueId, battueId),
+            isNull(distributions.deletedAt),
+          ),
+        ),
     ]);
 
   return {
@@ -106,6 +134,7 @@ export async function battueSnapshot(
       reglesSecurite: cahierRow.reglesSecurite,
       cotisationChasse: Number(cahierRow.cotisationChasse),
       cotisationChiens: Number(cahierRow.cotisationChiens),
+      morceaux: cahierRow.morceaux,
     },
     presidentId: presidentRow[0]?.participantId ?? null,
     participants: participantRows.map((p) => ({
@@ -157,6 +186,21 @@ export async function battueSnapshot(
       tireurParticipantId: p.tireurParticipantId,
       tireurInviteId: p.tireurInviteId,
       updatedAt: iso(p.updatedAt)!,
+      deletedAt: null,
+    })),
+    proprietaires: proprietaireRows.map((p) => ({
+      id: p.id,
+      nom: p.nom,
+      prenom: p.prenom,
+      telephone: p.telephone,
+    })),
+    distributions: distributionRows.map((d) => ({
+      id: d.id,
+      battueId: d.battueId,
+      recipientType: d.recipientType,
+      recipientId: d.recipientId,
+      morceau: d.morceau,
+      updatedAt: iso(d.updatedAt)!,
       deletedAt: null,
     })),
   };

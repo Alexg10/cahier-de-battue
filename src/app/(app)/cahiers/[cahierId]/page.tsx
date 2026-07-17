@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Coins,
   Download,
+  Drumstick,
   Home,
   Settings,
   Target,
@@ -134,6 +135,17 @@ export default async function CahierHubPage({
                 </span>
               </Link>
             ) : null}
+
+            <Link
+              href={`/cahiers/${cahierId}/distribution`}
+              className="flex items-center justify-between gap-2 rounded-[var(--radius)] border border-border px-4 py-3 transition-colors hover:bg-accent"
+            >
+              <span className="inline-flex items-center gap-2 font-semibold">
+                <Drumstick className="size-5" />
+                Distribution du gibier
+              </span>
+              <ChevronRight className="size-5 text-muted-foreground" />
+            </Link>
 
             {recap.parEspece.length > 0 ? (
               <div>

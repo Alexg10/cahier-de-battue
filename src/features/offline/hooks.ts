@@ -58,6 +58,20 @@ export function useDelegation(battueId: string) {
   return useLiveQuery(() => getDB().delegation.get(battueId), [battueId]);
 }
 
+export function useDistributions(battueId: string) {
+  return useLiveQuery(
+    async () => {
+      const rows = await getDB()
+        .distributions.where("battueId")
+        .equals(battueId)
+        .toArray();
+      return rows.filter((r) => !r.deletedAt);
+    },
+    [battueId],
+    [],
+  );
+}
+
 /** Fiches participant locales d'une battue (réactives), triées par nom. */
 export function useParticipants(battueId: string) {
   return useLiveQuery(
@@ -82,11 +96,12 @@ export function useDirtyCount(battueId: string) {
   return useLiveQuery(
     async () => {
       const db = getDB();
-      const [pts, invs, prels, parts, deleg] = await Promise.all([
+      const [pts, invs, prels, parts, dists, deleg] = await Promise.all([
         db.pointages.where("battueId").equals(battueId).toArray(),
         db.invites.where("battueId").equals(battueId).toArray(),
         db.prelevements.where("battueId").equals(battueId).toArray(),
         db.participants.where("battueId").equals(battueId).toArray(),
+        db.distributions.where("battueId").equals(battueId).toArray(),
         db.delegation.get(battueId),
       ]);
       let n = 0;
@@ -94,6 +109,7 @@ export function useDirtyCount(battueId: string) {
       n += invs.filter((r) => r.dirty === 1).length;
       n += prels.filter((r) => r.dirty === 1).length;
       n += parts.filter((r) => r.dirty === 1).length;
+      n += dists.filter((r) => r.dirty === 1).length;
       if (deleg?.dirty === 1) n += 1;
       return n;
     },

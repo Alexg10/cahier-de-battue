@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   battues,
+  distributions,
   invites,
   participants,
   pointages,
@@ -140,6 +141,30 @@ export async function applyPush(
           tireurParticipantId: p.tireurParticipantId,
           tireurInviteId: p.tireurInviteId,
           deletedAt: toDate(p.deletedAt),
+        },
+      });
+  }
+
+  // Distributions : upsert par id.
+  for (const d of body.distributions ?? []) {
+    if (d.battueId !== battueId) continue;
+    await db
+      .insert(distributions)
+      .values({
+        id: d.id,
+        battueId,
+        recipientType: d.recipientType,
+        recipientId: d.recipientId,
+        morceau: d.morceau,
+        deletedAt: toDate(d.deletedAt),
+      })
+      .onConflictDoUpdate({
+        target: [distributions.id],
+        set: {
+          recipientType: d.recipientType,
+          recipientId: d.recipientId,
+          morceau: d.morceau,
+          deletedAt: toDate(d.deletedAt),
         },
       });
   }
