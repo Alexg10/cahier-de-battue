@@ -1,0 +1,1 @@
+ALTER TABLE "cahiers" ADD COLUMN "regles_securite" text DEFAULT '' NOT NULL;
