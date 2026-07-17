@@ -3,6 +3,7 @@ import {
   boolean,
   date,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -13,11 +14,13 @@ import {
 } from "drizzle-orm/pg-core";
 import {
   bureauRoleEnum,
+  distributionRecipientEnum,
   posteRoleEnum,
   sexeEnum,
   timbreEnum,
   validationTypeEnum,
 } from "./enums";
+import type { Morceau } from "@/features/cahiers/constants";
 
 // Les enums doivent être ré-exportés depuis le schéma, sinon drizzle-kit
 // n'émet pas les `CREATE TYPE` correspondants.
@@ -82,6 +85,11 @@ export const cahiers = pgTable("cahiers", {
   cotisationChiens: numeric("cotisation_chiens", { precision: 8, scale: 2 })
     .notNull()
     .default("0"),
+  /** Morceaux distribuables (libellé + code court), éditables. */
+  morceaux: jsonb("morceaux")
+    .$type<Morceau[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   ...tracking,
 });
 
@@ -250,5 +258,22 @@ export const prelevements = pgTable("prelevements", {
   tireurInviteId: uuid("tireur_invite_id").references(() => invites.id, {
     onDelete: "set null",
   }),
+  ...tracking,
+});
+
+/**
+ * Attribution manuelle d'un morceau de gibier à un bénéficiaire, sur une battue.
+ * Bénéficiaire polymorphe (participant / propriétaire / invité). Le gigot
+ * attribué d'office au tireur est dérivé des prélèvements, pas stocké ici.
+ */
+export const distributions = pgTable("distributions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  battueId: uuid("battue_id")
+    .notNull()
+    .references(() => battues.id, { onDelete: "cascade" }),
+  recipientType: distributionRecipientEnum("recipient_type").notNull(),
+  recipientId: uuid("recipient_id").notNull(),
+  /** Code du morceau (référence la liste `morceaux` du cahier). */
+  morceau: text("morceau").notNull(),
   ...tracking,
 });

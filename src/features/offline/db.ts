@@ -4,10 +4,12 @@ import Dexie, { type Table } from "dexie";
 import type {
   SyncBattueMeta,
   SyncCahierMeta,
+  SyncDistribution,
   SyncInvite,
   SyncParticipant,
   SyncPointage,
   SyncPrelevement,
+  SyncProprietaire,
 } from "./types";
 
 export type LocalMeta = {
@@ -16,6 +18,7 @@ export type LocalMeta = {
   cahier: SyncCahierMeta;
   presidentId: string | null;
   participants: SyncParticipant[];
+  proprietaires: SyncProprietaire[];
   pulledAt: string | null;
 };
 
@@ -32,6 +35,7 @@ export type LocalParticipant = SyncParticipant & {
   battueId: string;
   dirty: 0 | 1;
 };
+export type LocalDistribution = SyncDistribution & { dirty: 0 | 1 };
 export type LocalDelegation = {
   battueId: string;
   signatureDelegant: string | null;
@@ -47,6 +51,7 @@ class BattueDB extends Dexie {
   prelevements!: Table<LocalPrelevement, string>;
   delegation!: Table<LocalDelegation, string>;
   participants!: Table<LocalParticipant, string>;
+  distributions!: Table<LocalDistribution, string>;
 
   constructor() {
     super("cahier-battue");
@@ -60,6 +65,10 @@ class BattueDB extends Dexie {
     // v2 : fiches participant éditables/synchronisables par battue.
     this.version(2).stores({
       participants: "key, battueId, dirty",
+    });
+    // v3 : distributions de gibier.
+    this.version(3).stores({
+      distributions: "id, battueId, dirty",
     });
   }
 }

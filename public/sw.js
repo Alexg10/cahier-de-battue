@@ -5,7 +5,7 @@
  *  - le reste en GET : réseau d'abord avec repli cache
  * Les requêtes POST (server actions), l'auth et les exports ne sont jamais mis en cache.
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 const OFFLINE_URL = "/hors-ligne";

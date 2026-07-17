@@ -33,6 +33,7 @@ export default async function ReglagesPage({
                 reglesSecurite: cahier.reglesSecurite,
                 cotisationChasse: cahier.cotisationChasse,
                 cotisationChiens: cahier.cotisationChiens,
+                morceaux: cahier.morceaux,
               }}
             />
           </CardContent>

@@ -1,5 +1,7 @@
 /** Types de transport pour la synchronisation d'une journée de battue. */
 
+import type { Morceau } from "@/features/cahiers/constants";
+
 export type SyncPointage = {
   id: string;
   battueId: string;
@@ -42,6 +44,23 @@ export type SyncPrelevement = {
   deletedAt: string | null;
 };
 
+export type SyncProprietaire = {
+  id: string;
+  nom: string;
+  prenom: string;
+  telephone: string | null;
+};
+
+export type SyncDistribution = {
+  id: string;
+  battueId: string;
+  recipientType: "PARTICIPANT" | "PROPRIETAIRE" | "INVITE";
+  recipientId: string;
+  morceau: string; // code du morceau
+  updatedAt: string;
+  deletedAt: string | null;
+};
+
 export type SyncParticipant = {
   id: string;
   nom: string;
@@ -79,6 +98,8 @@ export type SyncCahierMeta = {
   /** Montants de cotisation par battue (euros). */
   cotisationChasse: number;
   cotisationChiens: number;
+  /** Morceaux distribuables (libellé + code). */
+  morceaux: Morceau[];
 };
 
 /** Instantané complet d'une journée (réponse GET et POST). */
@@ -87,9 +108,11 @@ export type BattueSnapshot = {
   cahier: SyncCahierMeta;
   presidentId: string | null;
   participants: SyncParticipant[];
+  proprietaires: SyncProprietaire[];
   pointages: SyncPointage[];
   invites: SyncInvite[];
   prelevements: SyncPrelevement[];
+  distributions: SyncDistribution[];
 };
 
 /** Corps de la requête de push (lignes modifiées localement). */
@@ -104,4 +127,5 @@ export type SyncPushBody = {
   prelevements: SyncPrelevement[];
   /** Fiches participant corrigées localement (permis, assurance, téléphone…). */
   participants?: SyncParticipant[];
+  distributions?: SyncDistribution[];
 };

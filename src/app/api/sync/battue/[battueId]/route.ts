@@ -39,6 +39,7 @@ export async function POST(
   body.invites ??= [];
   body.prelevements ??= [];
   body.participants ??= [];
+  body.distributions ??= [];
 
   await applyPush(battueId, cahierId, body);
 

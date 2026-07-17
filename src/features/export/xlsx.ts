@@ -1,7 +1,18 @@
 import "server-only";
 import ExcelJS from "exceljs";
 import type { CotisationsMatrix } from "@/features/cotisations/queries";
+import type { DistributionMatrix } from "@/features/distribution/queries";
 import { formatDateLong, formatHeure, refBattue } from "@/lib/format";
+
+/** ["g","g","e"] -> "g×2 e" (identique à l'affichage). */
+function formatCodes(codes: string[] | undefined): string {
+  if (!codes || codes.length === 0) return "";
+  const counts = new Map<string, number>();
+  for (const c of codes) counts.set(c, (counts.get(c) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([c, n]) => (n > 1 ? `${c}×${n}` : c))
+    .join(" ");
+}
 
 const SEXE_LABEL: Record<string, string> = {
   MALE: "Mâle",
@@ -208,6 +219,62 @@ export async function buildCotisationsWorkbook(data: CotisationsMatrix) {
   }
   const added = sheet.addRow(totalRow);
   added.font = { bold: true };
+
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
+const DIST_TYPE: Record<string, string> = {
+  PARTICIPANT: "",
+  PROPRIETAIRE: " (prop.)",
+  INVITE: " (inv.)",
+};
+
+/** Classeur de la matrice de distribution (bénéficiaires × battues). */
+export async function buildDistributionWorkbook(data: DistributionMatrix) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Cahier de battue";
+  const sheet = wb.addWorksheet("Distribution");
+
+  sheet.columns = [
+    { header: "Bénéficiaire", key: "b", width: 26 },
+    ...data.battues.map((b) => ({
+      header: `n° ${refBattue(b.numero, data.saison)}`,
+      key: `b_${b.id}`,
+      width: 12,
+    })),
+    { header: "Total", key: "total", width: 8 },
+  ];
+  styleHeader(sheet.getRow(1));
+
+  for (const l of data.lignes) {
+    const row: Record<string, string | number> = {
+      b: `${l.nom.toUpperCase()} ${l.prenom}${DIST_TYPE[l.type] ?? ""}`,
+      total: l.total,
+    };
+    for (const b of data.battues) row[`b_${b.id}`] = formatCodes(l.cells[b.id]);
+    sheet.addRow(row);
+  }
+
+  const totalRow: Record<string, string | number> = {
+    b: "Total morceaux",
+    total: data.totalGeneral,
+  };
+  for (const b of data.battues) {
+    totalRow[`b_${b.id}`] = data.totalParBattue[b.id] ?? 0;
+  }
+  const added = sheet.addRow(totalRow);
+  added.font = { bold: true };
+
+  // Feuille légende des codes.
+  if (data.morceaux.length > 0) {
+    const leg = wb.addWorksheet("Légende");
+    leg.columns = [
+      { header: "Code", key: "code", width: 10 },
+      { header: "Morceau", key: "label", width: 24 },
+    ];
+    styleHeader(leg.getRow(1));
+    for (const m of data.morceaux) leg.addRow({ code: m.code, label: m.label });
+  }
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
