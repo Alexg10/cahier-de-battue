@@ -52,7 +52,7 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
   const president = participants.find((p) => p.id === presidentId);
   const responsable = participants.find((p) => p.id === battue.responsableId);
   const responsableNom = responsable
-    ? `${responsable.prenom} ${responsable.nom}`
+    ? `${responsable.nom.toUpperCase()} ${responsable.prenom}`
     : null;
   const estDelegation =
     Boolean(battue.responsableId) &&
@@ -83,7 +83,7 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
           <CardContent>
             <OfflineDelegation
               battueId={battueId}
-              presidentNom={`${president.prenom} ${president.nom}`}
+              presidentNom={`${president.nom.toUpperCase()} ${president.prenom}`}
               delegueNom={responsableNom}
               territoire={cahier.territoire}
               saison={cahier.saison}

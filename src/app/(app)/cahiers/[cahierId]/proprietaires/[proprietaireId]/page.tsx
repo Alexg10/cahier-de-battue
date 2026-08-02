@@ -34,7 +34,7 @@ export default async function EditProprietairePage({
   return (
     <>
       <PageHeader
-        title={`${proprietaire.prenom} ${proprietaire.nom}`}
+        title={`${proprietaire.nom.toUpperCase()} ${proprietaire.prenom}`}
         backHref={`/cahiers/${cahierId}/proprietaires`}
       />
       <Container className="flex flex-col gap-4">

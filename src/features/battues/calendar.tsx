@@ -47,7 +47,7 @@ export function Calendar({
     return eachDayOfInterval({ start, end });
   }, [cursor]);
 
-  const weekdays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const weekdays = ["L", "M", "M", "J", "V", "S", "D"];
 
   function onDayClick(day: Date) {
     const key = format(day, "yyyy-MM-dd");
@@ -66,28 +66,28 @@ export function Calendar({
           type="button"
           aria-label="Mois précédent"
           onClick={() => setCursor((c) => subMonths(c, 1))}
-          className="flex size-10 items-center justify-center rounded-full hover:bg-muted"
+          className="flex size-8 items-center justify-center rounded-full hover:bg-muted"
         >
           <ChevronLeft className="size-5" />
         </button>
-        <span className="text-base font-bold capitalize">
+        <span className="text-sm font-bold capitalize">
           {format(cursor, "MMMM yyyy", { locale: fr })}
         </span>
         <button
           type="button"
           aria-label="Mois suivant"
           onClick={() => setCursor((c) => addMonths(c, 1))}
-          className="flex size-10 items-center justify-center rounded-full hover:bg-muted"
+          className="flex size-8 items-center justify-center rounded-full hover:bg-muted"
         >
           <ChevronRight className="size-5" />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {weekdays.map((w) => (
+      <div className="grid grid-cols-7 gap-0.5 text-center">
+        {weekdays.map((w, i) => (
           <div
-            key={w}
-            className="py-1 text-xs font-semibold text-muted-foreground"
+            key={i}
+            className="pb-1 text-[10px] font-semibold text-muted-foreground"
           >
             {w}
           </div>
@@ -102,7 +102,7 @@ export function Calendar({
               key={key}
               onClick={() => onDayClick(day)}
               className={cn(
-                "relative flex aspect-square items-center justify-center rounded-lg text-sm transition-colors",
+                "relative flex h-9 items-center justify-center rounded-md text-xs transition-colors",
                 inMonth ? "text-foreground" : "text-muted-foreground/50",
                 hasBattue
                   ? "bg-primary font-bold text-primary-foreground hover:bg-primary-hover"

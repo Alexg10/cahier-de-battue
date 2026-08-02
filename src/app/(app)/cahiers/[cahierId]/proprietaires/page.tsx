@@ -87,7 +87,7 @@ export default async function ProprietairesPage({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">
-                        {p.prenom} {p.nom}
+                        {p.nom.toUpperCase()} {p.prenom}
                       </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         {p.participantId ? (

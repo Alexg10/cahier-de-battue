@@ -89,7 +89,7 @@ export function BattueForm({
           <option value="">— À désigner —</option>
           {participants.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.prenom} {p.nom}
+              {p.nom.toUpperCase()} {p.prenom}
               {p.id === presidentId ? " (président)" : ""}
             </option>
           ))}

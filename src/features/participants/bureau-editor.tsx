@@ -67,7 +67,7 @@ function RoleRow({
         <option value="">— Non attribué —</option>
         {participants.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.prenom} {p.nom}
+            {p.nom.toUpperCase()} {p.prenom}
           </option>
         ))}
       </Select>

@@ -5,17 +5,34 @@ import { Card } from "@/components/ui/card";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { LogoutButton } from "@/features/auth/logout-button";
-import { listCahiers } from "@/features/cahiers/queries";
+import {
+  HomeCalendar,
+  HomeCalendarToggle,
+} from "@/features/cahiers/home-calendar";
+import { listAllBattues, listCahiers } from "@/features/cahiers/queries";
 import { requireUser } from "@/lib/session";
 
 export default async function AccueilPage() {
   const user = await requireUser();
-  const cahiers = await listCahiers(user.id);
+  const [cahiers, battues] = await Promise.all([
+    listCahiers(user.id),
+    listAllBattues(user.id),
+  ]);
 
   return (
     <>
-      <PageHeader title="Mes cahiers de battue" action={<LogoutButton />} />
+      <PageHeader
+        title="Mes cahiers de battue"
+        action={
+          <div className="flex items-center gap-1">
+            <HomeCalendarToggle />
+            <LogoutButton />
+          </div>
+        }
+      />
       <Container className="flex flex-col gap-4">
+        <HomeCalendar battues={battues} />
+
         <Button render={<Link href="/cahiers/nouveau" />} size="lg" block>
           <Plus />
           Nouveau cahier de battue
@@ -23,7 +40,9 @@ export default async function AccueilPage() {
 
         {cahiers.length === 0 ? (
           <Card className="flex flex-col items-center gap-2 p-8 text-center">
-            <p className="text-base font-semibold">Aucun cahier pour l'instant</p>
+            <p className="text-base font-semibold">
+              Aucun cahier pour l&apos;instant
+            </p>
             <p className="text-sm text-muted-foreground">
               Créez votre premier cahier de battue pour une saison de chasse.
             </p>

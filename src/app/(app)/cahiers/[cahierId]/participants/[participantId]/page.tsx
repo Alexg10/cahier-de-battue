@@ -24,7 +24,7 @@ export default async function EditParticipantPage({
   return (
     <>
       <PageHeader
-        title={`${participant.prenom} ${participant.nom}`}
+        title={`${participant.nom.toUpperCase()} ${participant.prenom}`}
         backHref={`/cahiers/${cahierId}/participants`}
       />
       <Container className="flex flex-col gap-4">

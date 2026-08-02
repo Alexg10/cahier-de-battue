@@ -90,7 +90,7 @@ export function PointageSection({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">
-                    {p.prenom} {p.nom}
+                    {p.nom.toUpperCase()} {p.prenom}
                   </p>
                   {signed ? (
                     <Badge variant="default">{ROLE_LABEL[pt.role]}</Badge>
@@ -149,7 +149,7 @@ export function PointageSection({
                     saving={pending}
                     onSave={(url) => handleSave(p.id, url)}
                     onCancel={() => setOpenId(null)}
-                    saveLabel={`Valider — ${p.prenom} ${p.nom}`}
+                    saveLabel={`Valider — ${p.nom.toUpperCase()} ${p.prenom}`}
                   />
                 </div>
               ) : null}

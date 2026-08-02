@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,9 +39,12 @@ export function Dialog({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  // Rendu via portal sur <body> : indispensable pour que le `position: fixed`
+  // couvre tout l'écran même si un ancêtre a un `transform`/`backdrop-filter`
+  // (ex. le header collant), qui sinon deviendrait le bloc conteneur.
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
       role="presentation"
@@ -75,6 +79,7 @@ export function Dialog({
         </div>
         <div className="overflow-y-auto p-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

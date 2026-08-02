@@ -89,7 +89,7 @@ export function InviteForm({
           </option>
           {participants.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.prenom} {p.nom}
+              {p.nom.toUpperCase()} {p.prenom}
             </option>
           ))}
         </Select>
@@ -158,7 +158,7 @@ export function InviteForm({
           </div>
         ) : (
           <Button type="button" variant="secondary" onClick={() => setSigning(true)}>
-            Faire signer l'invité
+            Faire signer l&apos;invité
           </Button>
         )}
       </Field>

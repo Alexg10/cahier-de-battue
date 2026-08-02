@@ -58,7 +58,7 @@ export function OfflineInvites({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">
-                        {i.prenom} {i.nom}
+                        {i.nom.toUpperCase()} {i.prenom}
                       </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <Badge variant="muted">
@@ -66,7 +66,8 @@ export function OfflineInvites({
                         </Badge>
                         {parrain ? (
                           <span>
-                            Invité par {parrain.prenom} {parrain.nom}
+                            Invité par {parrain.nom.toUpperCase()}{" "}
+                            {parrain.prenom}
                           </span>
                         ) : null}
                         {i.signature ? (
@@ -164,7 +165,7 @@ function InviteEditor({
           </option>
           {participants.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.prenom} {p.nom}
+              {p.nom.toUpperCase()} {p.prenom}
             </option>
           ))}
         </Select>

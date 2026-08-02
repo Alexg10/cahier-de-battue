@@ -119,7 +119,7 @@ export function PrelevementForm({
             <optgroup label="Participants">
               {chasseurs.map((p) => (
                 <option key={p.id} value={`p:${p.id}`}>
-                  {p.prenom} {p.nom}
+                  {p.nom.toUpperCase()} {p.prenom}
                 </option>
               ))}
             </optgroup>
@@ -128,7 +128,7 @@ export function PrelevementForm({
             <optgroup label="Invités">
               {invites.map((i) => (
                 <option key={i.id} value={`i:${i.id}`}>
-                  {i.prenom} {i.nom}
+                  {i.nom.toUpperCase()} {i.prenom}
                 </option>
               ))}
             </optgroup>

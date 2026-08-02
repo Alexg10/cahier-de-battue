@@ -153,9 +153,10 @@ export default async function ImpressionPage({
           <p className="leading-relaxed">
             Je soussigné {president.prenom} {president.nom}, responsable du
             territoire de chasse de {cahier.territoire || "…"}, donne délégation
-            pour l'organisation de la battue à {responsableNom} pour la saison de
-            chasse {cahier.saison} pour la journée du {formatDateLong(battue.date)}
-            . Les responsabilités inhérentes à l'organisation de la battue
+            pour l&apos;organisation de la battue à {responsableNom} pour la
+            saison de chasse {cahier.saison} pour la journée du{" "}
+            {formatDateLong(battue.date)}. Les responsabilités inhérentes à
+            l&apos;organisation de la battue
             incombent au délégué. Fait à {battue.lieu || "…"}.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-4">
@@ -264,7 +265,7 @@ export default async function ImpressionPage({
               {invitesRows.map(({ invite, parrainPrenom, parrainNom }) => (
                 <tr key={invite.id} className="border-b border-gray-300">
                   <td className="py-1">
-                    {invite.prenom} {invite.nom}
+                    {invite.nom.toUpperCase()} {invite.prenom}
                   </td>
                   <td className="py-1">{invite.numPermis ?? "—"}</td>
                   <td className="py-1">{invite.numValidation ?? "—"}</td>

@@ -40,11 +40,11 @@ export function OfflinePrelevements({
   function tireurNom(p: LocalPrelevement) {
     if (p.tireurParticipantId) {
       const c = chasseurs.find((x) => x.id === p.tireurParticipantId);
-      return c ? `${c.prenom} ${c.nom}` : null;
+      return c ? `${c.nom.toUpperCase()} ${c.prenom}` : null;
     }
     if (p.tireurInviteId) {
       const i = invites.find((x) => x.id === p.tireurInviteId);
-      return i ? `${i.prenom} ${i.nom} (invité)` : null;
+      return i ? `${i.nom.toUpperCase()} ${i.prenom} (invité)` : null;
     }
     return null;
   }
@@ -225,7 +225,7 @@ function PrelevementEditor({
             <optgroup label="Participants">
               {chasseurs.map((p) => (
                 <option key={p.id} value={`p:${p.id}`}>
-                  {p.prenom} {p.nom}
+                  {p.nom.toUpperCase()} {p.prenom}
                 </option>
               ))}
             </optgroup>
@@ -234,7 +234,7 @@ function PrelevementEditor({
             <optgroup label="Invités">
               {invites.map((i) => (
                 <option key={i.id} value={`i:${i.id}`}>
-                  {i.prenom} {i.nom}
+                  {i.nom.toUpperCase()} {i.prenom}
                 </option>
               ))}
             </optgroup>

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   battues,
@@ -37,6 +37,37 @@ export async function listCahiers(userId: string) {
     .where(and(eq(cahiers.userId, userId), isNull(cahiers.deletedAt)))
     .groupBy(cahiers.id)
     .orderBy(desc(cahiers.saison), desc(cahiers.createdAt));
+}
+
+/** Une battue vue depuis l'accueil, rattachée à son cahier (pour le calendrier). */
+export type GlobalBattue = {
+  id: string;
+  cahierId: string;
+  cahierNom: string;
+  date: string;
+  numero: number;
+};
+
+/** Toutes les battues de tous les cahiers de l'utilisateur (calendrier global). */
+export async function listAllBattues(userId: string): Promise<GlobalBattue[]> {
+  return db
+    .select({
+      id: battues.id,
+      cahierId: battues.cahierId,
+      cahierNom: cahiers.nom,
+      date: battues.date,
+      numero: battues.numero,
+    })
+    .from(battues)
+    .innerJoin(cahiers, eq(cahiers.id, battues.cahierId))
+    .where(
+      and(
+        eq(cahiers.userId, userId),
+        isNull(cahiers.deletedAt),
+        isNull(battues.deletedAt),
+      ),
+    )
+    .orderBy(asc(battues.date));
 }
 
 /** Récapitulatif de la saison d'un cahier (compteurs + tableau de chasse). */
