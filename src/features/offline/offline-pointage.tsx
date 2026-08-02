@@ -11,12 +11,7 @@ import type { SyncParticipant } from "./types";
 import { SECURITY_NOTICE } from "./constants";
 import { useParticipants, usePointages } from "./hooks";
 import { ParticipantInfoDialog } from "./participant-info-dialog";
-import {
-  removePointage,
-  setPointageCotisations,
-  setPointageRole,
-  signPointage,
-} from "./sync";
+import { removePointage, signPointage } from "./sync";
 
 const ROLE_LABEL = { POSTE: "Posté", TRAQUEUR: "Traqueur" } as const;
 
@@ -76,8 +71,12 @@ export function OfflinePointage({
     (p) => p.cotisationChasse || p.cotisationChiens,
   ).length;
 
-  // Ouvre le panneau de signature en pré-remplissant depuis un pointage existant.
-  function openPanel(participantId: string, existing?: (typeof pointages)[number]) {
+  // Ouvre le panneau de signature ; pré-remplit depuis un pointage existant
+  // (modification) ou repart à zéro (première signature).
+  function openPanel(
+    participantId: string,
+    existing?: (typeof pointages)[number],
+  ) {
     setRole(existing?.role ?? "POSTE");
     setCotChasse(existing?.cotisationChasse ?? false);
     setCotChiens(existing?.cotisationChiens ?? false);
@@ -142,14 +141,13 @@ export function OfflinePointage({
                   )}
                 </div>
                 {pt ? (
-                  <button
-                    type="button"
-                    aria-label="Annuler le pointage"
-                    onClick={() => removePointage(battueId, p.id)}
-                    className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => openPanel(p.id, pt)}
                   >
-                    <X className="size-5" />
-                  </button>
+                    Modifier
+                  </Button>
                 ) : (
                   <Button size="sm" onClick={() => openPanel(p.id)}>
                     Signer
@@ -157,59 +155,11 @@ export function OfflinePointage({
                 )}
               </div>
 
-              {pt && !isOpen ? (
-                <div className="flex flex-col gap-2 border-t border-border px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      Rôle :
-                    </span>
-                    <RoleToggle
-                      value={pt.role}
-                      onChange={(r) => setPointageRole(battueId, p.id, r)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => openPanel(p.id, pt)}
-                      className="ml-auto text-xs font-semibold text-primary hover:underline"
-                    >
-                      Re-signer
-                    </button>
-                  </div>
-                  {hasCotisations ? (
-                    <div className="flex flex-wrap gap-3">
-                      {cotisationChasse > 0 ? (
-                        <CotisationCheck
-                          label={`Chasse (${formatEuro(cotisationChasse)})`}
-                          checked={pt.cotisationChasse}
-                          onChange={(v) =>
-                            setPointageCotisations(battueId, p.id, {
-                              chasse: v,
-                              chiens: pt.cotisationChiens,
-                            })
-                          }
-                        />
-                      ) : null}
-                      {cotisationChiens > 0 ? (
-                        <CotisationCheck
-                          label={`Chiens (${formatEuro(cotisationChiens)})`}
-                          checked={pt.cotisationChiens}
-                          onChange={(v) =>
-                            setPointageCotisations(battueId, p.id, {
-                              chasse: pt.cotisationChasse,
-                              chiens: v,
-                            })
-                          }
-                        />
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
               {isOpen ? (
                 <div className="border-t border-border p-3">
                   <p className="mb-2 text-sm font-bold">
-                    Signature de {fullName(p)}
+                    {pt ? "Modifier le pointage de " : "Signature de "}
+                    {fullName(p)}
                   </p>
                   <InfoBlock
                     participant={p}
@@ -247,9 +197,22 @@ export function OfflinePointage({
                       setOpenId(null);
                     }}
                     onCancel={() => setOpenId(null)}
-                    saveLabel="Valider la signature"
+                    saveLabel={pt ? "Re-signer" : "Valider la signature"}
                     notice={SECURITY_NOTICE}
                   />
+                  {pt ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        removePointage(battueId, p.id);
+                        setOpenId(null);
+                      }}
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-destructive hover:underline"
+                    >
+                      <X className="size-4" />
+                      Annuler le pointage
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </li>

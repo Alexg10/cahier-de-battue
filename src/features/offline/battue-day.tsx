@@ -76,7 +76,8 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
           <CardHeader>
             <CardTitle>Délégation de pouvoir</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Le responsable n'est pas le président : signature des deux parties.
+              Le responsable n&apos;est pas le président : signature des deux
+              parties.
             </p>
           </CardHeader>
           <CardContent>
@@ -139,7 +140,8 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
         <CardHeader>
           <CardTitle>Distribution du gibier</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Gigot attribué d&apos;office au tireur ; ajoutez les autres morceaux.
+            Gigot tireur attribué d&apos;office au tireur ; ajoutez les autres
+            morceaux.
           </p>
         </CardHeader>
         <CardContent>

@@ -18,6 +18,8 @@ import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { Calendar } from "@/features/battues/calendar";
 import { listBattues } from "@/features/battues/queries";
+import { saisonSuivante } from "@/features/cahiers/constants";
+import { NouvelleSaisonButton } from "@/features/cahiers/nouvelle-saison-button";
 import { getCahier, saisonRecap } from "@/features/cahiers/queries";
 import { formatEuro } from "@/lib/format";
 import { requireUser } from "@/lib/session";
@@ -80,6 +82,7 @@ export default async function CahierHubPage({
     listBattues(cahierId),
     saisonRecap(cahierId),
   ]);
+  const saisonCible = saisonSuivante(cahier.saison);
 
   return (
     <>
@@ -187,6 +190,15 @@ export default async function CahierHubPage({
             </Card>
           </Link>
         ))}
+
+        {/* Reconduction du cahier sur la saison suivante */}
+        {saisonCible ? (
+          <NouvelleSaisonButton
+            cahierId={cahierId}
+            saisonCible={saisonCible}
+            block
+          />
+        ) : null}
       </Container>
     </>
   );

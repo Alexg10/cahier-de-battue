@@ -64,7 +64,8 @@ export default async function DistributionPage({
         </Card>
 
         <p className="text-xs text-muted-foreground">
-          Le gigot (code g) est attribué d&apos;office au tireur de chaque animal.
+          Le gigot tireur (code gT) est attribué d&apos;office au tireur de
+          chaque animal.
         </p>
       </Container>
     </>

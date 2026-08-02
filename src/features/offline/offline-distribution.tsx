@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { Morceau } from "@/features/cahiers/constants";
+import { GIGOT_TIREUR_CODE, type Morceau } from "@/features/cahiers/constants";
 import {
   useDistributions,
   useInvites,
@@ -23,7 +23,7 @@ const TYPE_BADGE: Record<RecipientType, string> = {
 };
 
 /** Code du gigot attribué d'office (référence la liste des morceaux). */
-const GIGOT = "g";
+const GIGOT = GIGOT_TIREUR_CODE;
 
 export function OfflineDistribution({
   battueId,

@@ -57,7 +57,8 @@ export default async function DistributionImpressionPage({
                 {m.code} = {m.label}
               </span>
             ))}
-            {" · "}gigot (g) attribué d&apos;office au tireur.
+            {" · "}gigot tireur (gT) attribué d&apos;office au tireur de chaque
+            animal.
           </p>
         ) : null}
       </header>

@@ -10,10 +10,10 @@ import {
   prelevements,
   proprietaires,
 } from "@/db/schema";
-import type { Morceau } from "@/features/cahiers/constants";
+import { GIGOT_TIREUR_CODE, type Morceau } from "@/features/cahiers/constants";
 
 /** Code du gigot attribué d'office au tireur. */
-const GIGOT = "g";
+const GIGOT = GIGOT_TIREUR_CODE;
 
 export type DistributionMatrix = {
   saison: string;
