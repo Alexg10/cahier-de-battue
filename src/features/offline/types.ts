@@ -49,6 +49,8 @@ export type SyncProprietaire = {
   nom: string;
   prenom: string;
   telephone: string | null;
+  /** Participant chasseur lié (le propriétaire est aussi chasseur), ou null. */
+  participantId: string | null;
 };
 
 export type SyncDistribution = {

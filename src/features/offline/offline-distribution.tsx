@@ -46,22 +46,42 @@ export function OfflineDistribution({
 
   // Bénéficiaires = chasseurs présents + propriétaires + invités du jour.
   const signedIds = new Set(pointages.map((p) => p.participantId));
+  // Chasseurs qui sont aussi propriétaires fonciers : toujours bénéficiaires
+  // (même absents), et représentés une seule fois par leur fiche participant.
+  const landownerIds = new Set(
+    proprietaires
+      .map((p) => p.participantId)
+      .filter((id): id is string => Boolean(id)),
+  );
+  // Propriétaires liés à un chasseur, indexés par participant (pour rattacher
+  // d'éventuelles attributions héritées faites à la fiche propriétaire).
+  const linkedPropIdsByParticipant = new Map<string, string[]>();
+  for (const p of proprietaires) {
+    if (p.participantId) {
+      const arr = linkedPropIdsByParticipant.get(p.participantId) ?? [];
+      arr.push(p.id);
+      linkedPropIdsByParticipant.set(p.participantId, arr);
+    }
+  }
   const recipients: { type: RecipientType; id: string; nom: string; prenom: string }[] =
     [
       ...participants
-        .filter((p) => signedIds.has(p.id))
+        .filter((p) => signedIds.has(p.id) || landownerIds.has(p.id))
         .map((p) => ({
           type: "PARTICIPANT" as const,
           id: p.id,
           nom: p.nom,
           prenom: p.prenom,
         })),
-      ...proprietaires.map((p) => ({
-        type: "PROPRIETAIRE" as const,
-        id: p.id,
-        nom: p.nom,
-        prenom: p.prenom,
-      })),
+      // Seuls les propriétaires « seuls » (non liés à un chasseur) ont une ligne.
+      ...proprietaires
+        .filter((p) => !p.participantId)
+        .map((p) => ({
+          type: "PROPRIETAIRE" as const,
+          id: p.id,
+          nom: p.nom,
+          prenom: p.prenom,
+        })),
       ...invites.map((i) => ({
         type: "INVITE" as const,
         id: i.id,
@@ -102,8 +122,16 @@ export function OfflineDistribution({
         <ul className="flex flex-col gap-2">
           {recipients.map((r) => {
             const key = `${r.type}:${r.id}`;
+            const linkedPropIds =
+              r.type === "PARTICIPANT"
+                ? (linkedPropIdsByParticipant.get(r.id) ?? [])
+                : [];
             const manual = distributions.filter(
-              (d) => d.recipientType === r.type && d.recipientId === r.id,
+              (d) =>
+                (d.recipientType === r.type && d.recipientId === r.id) ||
+                // Attributions héritées faites à la fiche propriétaire liée.
+                (d.recipientType === "PROPRIETAIRE" &&
+                  linkedPropIds.includes(d.recipientId)),
             );
             const gigots = autoGigots(r.type, r.id);
             return (

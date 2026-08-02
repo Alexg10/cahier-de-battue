@@ -5,6 +5,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { requireCahier } from "@/features/cahiers/guard";
+import { listParticipants } from "@/features/participants/queries";
 import { deleteProprietaire } from "@/features/proprietaires/actions";
 import { ProprietaireForm } from "@/features/proprietaires/proprietaire-form";
 import { getProprietaire } from "@/features/proprietaires/queries";
@@ -21,6 +22,15 @@ export default async function EditProprietairePage({
   const proprietaire = await getProprietaire(cahierId, proprietaireId);
   if (!proprietaire) notFound();
 
+  const chasseurs = (await listParticipants(cahierId))
+    .filter((p) => p.estChasseur)
+    .map((p) => ({
+      id: p.id,
+      nom: p.nom,
+      prenom: p.prenom,
+      telephone: p.telephone,
+    }));
+
   return (
     <>
       <PageHeader
@@ -33,6 +43,7 @@ export default async function EditProprietairePage({
             <ProprietaireForm
               cahierId={cahierId}
               proprietaire={proprietaire}
+              chasseurs={chasseurs}
             />
           </CardContent>
         </Card>

@@ -36,21 +36,21 @@ export function ParticipantForm({
       ) : null}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Prénom" htmlFor="prenom" required>
-          <Input
-            id="prenom"
-            name="prenom"
-            required
-            defaultValue={participant?.prenom ?? ""}
-            autoComplete="off"
-          />
-        </Field>
         <Field label="Nom" htmlFor="nom" required>
           <Input
             id="nom"
             name="nom"
             required
             defaultValue={participant?.nom ?? ""}
+            autoComplete="off"
+          />
+        </Field>
+        <Field label="Prénom" htmlFor="prenom" required>
+          <Input
+            id="prenom"
+            name="prenom"
+            required
+            defaultValue={participant?.prenom ?? ""}
             autoComplete="off"
           />
         </Field>

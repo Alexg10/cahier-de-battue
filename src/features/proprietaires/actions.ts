@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { cahiers, proprietaires } from "@/db/schema";
+import { cahiers, participants, proprietaires } from "@/db/schema";
 import { requireUser } from "@/lib/session";
 
 export type FormState = { error?: string } | undefined;
@@ -19,11 +19,31 @@ async function assertOwned(cahierId: string, userId: string) {
   return Boolean(row);
 }
 
+/** Vrai si le participant existe et appartient bien au cahier. */
+async function participantInCahier(participantId: string, cahierId: string) {
+  const [row] = await db
+    .select({ id: participants.id })
+    .from(participants)
+    .where(
+      and(
+        eq(participants.id, participantId),
+        eq(participants.cahierId, cahierId),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
+}
+
 const proprietaireSchema = z.object({
   cahierId: z.string().uuid(),
   nom: z.string().trim().min(1, "Le nom est obligatoire."),
   prenom: z.string().trim().min(1, "Le prénom est obligatoire."),
   telephone: z.string().trim().optional().default(""),
+  // Lien facultatif vers un participant chasseur (chaîne vide = non lié).
+  participantId: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.string().uuid().nullable().default(null),
+  ),
 });
 
 function parse(formData: FormData) {
@@ -32,6 +52,7 @@ function parse(formData: FormData) {
     nom: formData.get("nom"),
     prenom: formData.get("prenom"),
     telephone: formData.get("telephone") ?? "",
+    participantId: formData.get("participantId"),
   });
 }
 
@@ -48,11 +69,18 @@ export async function createProprietaire(
     return { error: "Cahier introuvable." };
   }
   const d = parsed.data;
+  if (
+    d.participantId &&
+    !(await participantInCahier(d.participantId, d.cahierId))
+  ) {
+    return { error: "Chasseur introuvable." };
+  }
   await db.insert(proprietaires).values({
     cahierId: d.cahierId,
     nom: d.nom,
     prenom: d.prenom,
     telephone: d.telephone || null,
+    participantId: d.participantId,
   });
   revalidatePath(`/cahiers/${d.cahierId}/proprietaires`);
   redirect(`/cahiers/${d.cahierId}/proprietaires`);
@@ -76,12 +104,19 @@ export async function updateProprietaire(
     return { error: "Cahier introuvable." };
   }
   const d = parsed.data;
+  if (
+    d.participantId &&
+    !(await participantInCahier(d.participantId, d.cahierId))
+  ) {
+    return { error: "Chasseur introuvable." };
+  }
   await db
     .update(proprietaires)
     .set({
       nom: d.nom,
       prenom: d.prenom,
       telephone: d.telephone || null,
+      participantId: d.participantId,
     })
     .where(
       and(

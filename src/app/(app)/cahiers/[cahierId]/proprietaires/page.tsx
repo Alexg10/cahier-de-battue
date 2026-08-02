@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/container";
@@ -88,11 +89,16 @@ export default async function ProprietairesPage({
                       <p className="truncate font-semibold">
                         {p.prenom} {p.nom}
                       </p>
-                      {p.telephone ? (
-                        <span className="text-sm text-muted-foreground">
-                          {p.telephone}
-                        </span>
-                      ) : null}
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        {p.participantId ? (
+                          <Badge variant="muted">Chasseur</Badge>
+                        ) : null}
+                        {p.telephone ? (
+                          <span className="text-sm text-muted-foreground">
+                            {p.telephone}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                     <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
                   </Link>

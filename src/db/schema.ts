@@ -163,6 +163,14 @@ export const proprietaires = pgTable("proprietaires", {
   nom: text("nom").notNull(),
   prenom: text("prenom").notNull(),
   telephone: text("telephone"),
+  /**
+   * Lien facultatif vers un participant chasseur : quand le propriétaire EST
+   * aussi un chasseur, on référence sa fiche pour ne pas le dédoubler dans la
+   * distribution du gibier. `set null` si le participant est supprimé.
+   */
+  participantId: uuid("participant_id").references(() => participants.id, {
+    onDelete: "set null",
+  }),
   ...tracking,
 });
 

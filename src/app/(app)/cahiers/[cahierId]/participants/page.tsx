@@ -60,7 +60,7 @@ export default async function ParticipantsPage({
           <CardContent>
             {participants.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Ajoutez d'abord des participants.
+                Ajoutez d&apos;abord des participants.
               </p>
             ) : (
               <BureauEditor
@@ -120,7 +120,7 @@ export default async function ParticipantsPage({
 
           {participants.length === 0 ? (
             <Card className="p-6 text-center text-sm text-muted-foreground">
-              Aucun participant pour l'instant.
+              Aucun participant pour l&apos;instant.
             </Card>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -132,7 +132,7 @@ export default async function ParticipantsPage({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">
-                        {p.prenom} {p.nom}
+                        {p.nom.toUpperCase()} {p.prenom}
                       </p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {(rolesByParticipant[p.id] ?? []).map((r) => (

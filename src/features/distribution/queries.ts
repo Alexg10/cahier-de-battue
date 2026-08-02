@@ -69,6 +69,7 @@ export async function saisonDistributionMatrix(
           id: proprietaires.id,
           nom: proprietaires.nom,
           prenom: proprietaires.prenom,
+          participantId: proprietaires.participantId,
         })
         .from(proprietaires)
         .where(
@@ -135,6 +136,12 @@ export async function saisonDistributionMatrix(
   const partById = new Map(participantRows.map((p) => [p.id, p]));
   const propById = new Map(proprietaireRows.map((p) => [p.id, p]));
   const invById = new Map(inviteRows.map((i) => [i.id, i]));
+  // Propriétaire lié à un chasseur → id du participant (pour fusionner les lignes).
+  const propToParticipant = new Map(
+    proprietaireRows
+      .filter((p) => p.participantId)
+      .map((p) => [p.id, p.participantId!] as const),
+  );
 
   type Ligne = DistributionMatrix["lignes"][number];
   const lignes = new Map<string, Ligne>();
@@ -174,20 +181,26 @@ export async function saisonDistributionMatrix(
     }
   }
 
-  // Attributions manuelles.
+  // Attributions manuelles. Un propriétaire lié à un chasseur est fusionné sur
+  // la ligne du participant pour ne pas apparaître deux fois.
   for (const d of distributionRows) {
+    let type = d.recipientType;
+    let id = d.recipientId;
+    if (type === "PROPRIETAIRE") {
+      const linkedPid = propToParticipant.get(d.recipientId);
+      if (linkedPid && partById.has(linkedPid)) {
+        type = "PARTICIPANT";
+        id = linkedPid;
+      }
+    }
     const info =
-      d.recipientType === "PARTICIPANT"
-        ? partById.get(d.recipientId)
-        : d.recipientType === "PROPRIETAIRE"
-          ? propById.get(d.recipientId)
-          : invById.get(d.recipientId);
+      type === "PARTICIPANT"
+        ? partById.get(id)
+        : type === "PROPRIETAIRE"
+          ? propById.get(id)
+          : invById.get(id);
     if (!info) continue;
-    push(
-      ensure(d.recipientType, d.recipientId, info.nom, info.prenom),
-      d.battueId,
-      d.morceau,
-    );
+    push(ensure(type, id, info.nom, info.prenom), d.battueId, d.morceau);
   }
 
   const totalParBattue: Record<string, number> = {};

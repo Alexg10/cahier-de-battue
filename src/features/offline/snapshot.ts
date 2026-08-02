@@ -193,6 +193,7 @@ export async function battueSnapshot(
       nom: p.nom,
       prenom: p.prenom,
       telephone: p.telephone,
+      participantId: p.participantId,
     })),
     distributions: distributionRows.map((d) => ({
       id: d.id,
