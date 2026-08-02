@@ -93,6 +93,27 @@ export const cahiers = pgTable("cahiers", {
   ...tracking,
 });
 
+/**
+ * Plan du territoire : fichier (JPG ou PDF) rattaché à un cahier. Le contenu
+ * binaire est stocké en base64 dans `data` ; on ne le lit qu'au moment de servir
+ * le fichier (la liste ne sélectionne que les métadonnées).
+ */
+export const plans = pgTable("plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cahierId: uuid("cahier_id")
+    .notNull()
+    .references(() => cahiers.id, { onDelete: "cascade" }),
+  /** Nom affiché (nom du fichier d'origine). */
+  nom: text("nom").notNull(),
+  /** Type MIME : image/jpeg ou application/pdf. */
+  mimeType: text("mime_type").notNull(),
+  /** Taille en octets (indicatif, pour l'affichage). */
+  taille: integer("taille").notNull().default(0),
+  /** Contenu du fichier encodé en base64 (sans préfixe data:). */
+  data: text("data").notNull(),
+  ...tracking,
+});
+
 /** Participants : personnes rattachées à un cahier (chasseurs ou non). */
 export const participants = pgTable("participants", {
   id: uuid("id").primaryKey().defaultRandom(),

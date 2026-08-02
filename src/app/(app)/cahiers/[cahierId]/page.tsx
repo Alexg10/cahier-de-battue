@@ -5,6 +5,7 @@ import {
   Download,
   Drumstick,
   Home,
+  Map,
   Settings,
   Target,
   Users,
@@ -53,6 +54,12 @@ const tuiles = [
     icon: Home,
     titre: "Propriétaires",
     desc: "Propriétaires fonciers",
+  },
+  {
+    href: "plan",
+    icon: Map,
+    titre: "Plan du territoire",
+    desc: "Cartes et plans (JPG, PDF)",
   },
   {
     href: "export",
