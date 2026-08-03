@@ -6,7 +6,7 @@ export type SyncPointage = {
   id: string;
   battueId: string;
   participantId: string;
-  role: "POSTE" | "TRAQUEUR";
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
   cotisationChasse: boolean;
   cotisationChiens: boolean;
   signature: string | null;
@@ -32,7 +32,7 @@ export type SyncInviteParticipation = {
   id: string;
   battueId: string;
   inviteId: string;
-  role: "POSTE" | "TRAQUEUR";
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
   signature: string | null;
   updatedAt: string;
   deletedAt: string | null;
@@ -81,6 +81,7 @@ export type SyncParticipant = {
   numAssurance: string | null;
   nomAssurance: string | null;
   estChasseur: boolean;
+  type: "CHASSEUR" | "TRAQUEUR" | "ACCOMPAGNANT";
   updatedAt: string; // ISO
 };
 

@@ -290,7 +290,7 @@ function ParticipationEditor({
   onDone: () => void;
 }) {
   const [inviteId, setInviteId] = useState(participation?.inviteId ?? "");
-  const [role, setRole] = useState<"POSTE" | "TRAQUEUR">(
+  const [role, setRole] = useState<"POSTE" | "TRAQUEUR" | "ACCOMPAGNANT">(
     participation?.role ?? "POSTE",
   );
   const [signature, setSignature] = useState<string | null>(
@@ -339,7 +339,7 @@ function ParticipationEditor({
 
       <Field label="Poste">
         <div className="inline-flex overflow-hidden rounded-full border border-border">
-          {(["POSTE", "TRAQUEUR"] as const).map((r) => (
+          {(["POSTE", "TRAQUEUR", "ACCOMPAGNANT"] as const).map((r) => (
             <button
               key={r}
               type="button"
@@ -351,7 +351,11 @@ function ParticipationEditor({
                   : "bg-card text-muted-foreground",
               )}
             >
-              {r === "POSTE" ? "Posté" : "Traqueur"}
+              {r === "POSTE"
+                ? "Posté"
+                : r === "TRAQUEUR"
+                  ? "Traqueur"
+                  : "Accompagnant"}
             </button>
           ))}
         </div>

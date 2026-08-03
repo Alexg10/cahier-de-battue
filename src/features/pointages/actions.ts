@@ -20,7 +20,7 @@ export async function signPointage(input: {
   battueId: string;
   participantId: string;
   signature: string;
-  role?: "POSTE" | "TRAQUEUR";
+  role?: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
 }) {
   const user = await requireUser();
   const battueId = z.string().uuid().parse(input.battueId);
@@ -47,7 +47,7 @@ export async function signPointage(input: {
 export async function setPointageRole(input: {
   battueId: string;
   participantId: string;
-  role: "POSTE" | "TRAQUEUR";
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
 }) {
   const user = await requireUser();
   const battueId = z.string().uuid().parse(input.battueId);

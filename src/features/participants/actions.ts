@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { bureauMembres, cahiers, participants } from "@/db/schema";
+import {
+  bureauMembres,
+  cahiers,
+  participants,
+  proprietaires,
+} from "@/db/schema";
 import { requireUser } from "@/lib/session";
 import { parseParticipantsFile } from "./import";
 
@@ -24,6 +29,25 @@ async function assertOwned(cahierId: string, userId: string) {
 }
 
 const optText = z.string().trim().optional().default("");
+
+// Parrain (« invité par ») : "PARTICIPANT:<uuid>" / "PROPRIETAIRE:<uuid>" ou vide.
+const parrainField = z
+  .preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z
+      .string()
+      .regex(
+        /^(PARTICIPANT|PROPRIETAIRE):[0-9a-fA-F-]{36}$/,
+        "Parrain invalide.",
+      )
+      .nullable()
+      .default(null),
+  )
+  .transform((s) => {
+    if (!s) return null;
+    const [type, id] = s.split(":");
+    return { type: type as "PARTICIPANT" | "PROPRIETAIRE", id };
+  });
 
 const participantSchema = z.object({
   cahierId: z.string().uuid(),
@@ -50,7 +74,10 @@ const participantSchema = z.object({
   nomAssurance: optText,
   adresseAssurance: optText,
   numAssurance: optText,
-  estChasseur: z.coerce.boolean().default(true),
+  type: z
+    .enum(["CHASSEUR", "TRAQUEUR", "ACCOMPAGNANT"])
+    .default("CHASSEUR"),
+  parrain: parrainField,
 });
 
 function parseParticipant(formData: FormData) {
@@ -72,8 +99,8 @@ function parseParticipant(formData: FormData) {
     nomAssurance: formData.get("nomAssurance") ?? "",
     adresseAssurance: formData.get("adresseAssurance") ?? "",
     numAssurance: formData.get("numAssurance") ?? "",
-    // Checkbox : présente => "on"/"true" ; absente => null (non chasseur).
-    estChasseur: formData.get("estChasseur") != null,
+    type: formData.get("type") ?? "CHASSEUR",
+    parrain: formData.get("parrain"),
   });
 }
 
@@ -96,8 +123,34 @@ function toParticipantRow(d: z.infer<typeof participantSchema>) {
     nomAssurance: d.nomAssurance || null,
     adresseAssurance: d.adresseAssurance || null,
     numAssurance: d.numAssurance || null,
-    estChasseur: d.estChasseur,
+    type: d.type,
+    // Dérivé : seul un chasseur possède un permis et peut tirer.
+    estChasseur: d.type === "CHASSEUR",
+    parrainType: d.parrain?.type ?? null,
+    parrainId: d.parrain?.id ?? null,
   };
+}
+
+/** Vrai si le parrain (participant ou propriétaire) appartient bien au cahier. */
+async function parrainInCahier(
+  cahierId: string,
+  type: "PARTICIPANT" | "PROPRIETAIRE",
+  id: string,
+) {
+  if (type === "PARTICIPANT") {
+    const [row] = await db
+      .select({ id: participants.id })
+      .from(participants)
+      .where(and(eq(participants.id, id), eq(participants.cahierId, cahierId)))
+      .limit(1);
+    return Boolean(row);
+  }
+  const [row] = await db
+    .select({ id: proprietaires.id })
+    .from(proprietaires)
+    .where(and(eq(proprietaires.id, id), eq(proprietaires.cahierId, cahierId)))
+    .limit(1);
+  return Boolean(row);
 }
 
 export async function createParticipant(
@@ -113,6 +166,12 @@ export async function createParticipant(
     return { error: "Cahier introuvable." };
   }
   const d = parsed.data;
+  if (
+    d.parrain &&
+    !(await parrainInCahier(d.cahierId, d.parrain.type, d.parrain.id))
+  ) {
+    return { error: "Parrain introuvable." };
+  }
   await db.insert(participants).values({
     cahierId: d.cahierId,
     ...toParticipantRow(d),
@@ -139,6 +198,12 @@ export async function updateParticipant(
     return { error: "Cahier introuvable." };
   }
   const d = parsed.data;
+  if (
+    d.parrain &&
+    !(await parrainInCahier(d.cahierId, d.parrain.type, d.parrain.id))
+  ) {
+    return { error: "Parrain introuvable." };
+  }
   await db
     .update(participants)
     .set(toParticipantRow(d))
@@ -182,6 +247,7 @@ export async function importParticipants(
       telephone: p.telephone,
       numPermis: p.numPermis,
       email: p.email,
+      type: "CHASSEUR" as const,
       estChasseur: true,
     })),
   );

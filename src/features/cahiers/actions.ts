@@ -77,6 +77,7 @@ export async function createCahier(
         telephone: p.telephone,
         numPermis: p.numPermis,
         email: p.email,
+        type: "CHASSEUR" as const,
         estChasseur: true,
       })),
     );
@@ -248,6 +249,7 @@ export async function dupliquerSaison(formData: FormData) {
     nomAssurance: p.nomAssurance,
     adresseAssurance: p.adresseAssurance,
     numAssurance: p.numAssurance,
+    type: p.type,
     estChasseur: p.estChasseur,
   }));
 

@@ -44,6 +44,11 @@ const proprietaireSchema = z.object({
     (v) => (v === "" || v == null ? null : v),
     z.string().uuid().nullable().default(null),
   ),
+  // Référent : participant contact (chaîne vide = aucun).
+  referentId: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.string().uuid().nullable().default(null),
+  ),
 });
 
 function parse(formData: FormData) {
@@ -53,6 +58,7 @@ function parse(formData: FormData) {
     prenom: formData.get("prenom"),
     telephone: formData.get("telephone") ?? "",
     participantId: formData.get("participantId"),
+    referentId: formData.get("referentId"),
   });
 }
 
@@ -75,12 +81,16 @@ export async function createProprietaire(
   ) {
     return { error: "Chasseur introuvable." };
   }
+  if (d.referentId && !(await participantInCahier(d.referentId, d.cahierId))) {
+    return { error: "Référent introuvable." };
+  }
   await db.insert(proprietaires).values({
     cahierId: d.cahierId,
     nom: d.nom,
     prenom: d.prenom,
     telephone: d.telephone || null,
     participantId: d.participantId,
+    referentId: d.referentId,
   });
   revalidatePath(`/cahiers/${d.cahierId}/proprietaires`);
   redirect(`/cahiers/${d.cahierId}/proprietaires`);
@@ -110,6 +120,9 @@ export async function updateProprietaire(
   ) {
     return { error: "Chasseur introuvable." };
   }
+  if (d.referentId && !(await participantInCahier(d.referentId, d.cahierId))) {
+    return { error: "Référent introuvable." };
+  }
   await db
     .update(proprietaires)
     .set({
@@ -117,6 +130,7 @@ export async function updateProprietaire(
       prenom: d.prenom,
       telephone: d.telephone || null,
       participantId: d.participantId,
+      referentId: d.referentId,
     })
     .where(
       and(

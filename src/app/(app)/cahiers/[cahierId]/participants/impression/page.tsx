@@ -40,8 +40,11 @@ function Fiche({ p }: { p: Participant }) {
     <div className="mb-3 break-inside-avoid rounded border border-black p-3 text-xs">
       <p className="mb-2 border-b border-gray-300 pb-1 text-sm font-bold">
         {p.nom.toUpperCase()} {p.prenom}
-        {!p.estChasseur ? (
-          <span className="font-normal text-gray-500"> — non chasseur</span>
+        {p.type !== "CHASSEUR" ? (
+          <span className="font-normal text-gray-500">
+            {" "}
+            — {p.type === "TRAQUEUR" ? "traqueur" : "accompagnant"}
+          </span>
         ) : null}
       </p>
       <dl className="grid grid-cols-3 gap-x-4 gap-y-1.5">

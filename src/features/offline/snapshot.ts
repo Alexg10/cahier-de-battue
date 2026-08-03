@@ -155,6 +155,7 @@ export async function battueSnapshot(
       numAssurance: p.numAssurance,
       nomAssurance: p.nomAssurance,
       estChasseur: p.estChasseur,
+      type: p.type,
       updatedAt: p.updatedAt.toISOString(),
     })),
     pointages: pointageRows.map((p) => ({

@@ -4,6 +4,7 @@ import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { requireCahier } from "@/features/cahiers/guard";
 import { ParticipantForm } from "@/features/participants/participant-form";
+import { listParticipantParrains } from "@/features/participants/queries";
 
 export const metadata: Metadata = { title: "Nouveau participant" };
 
@@ -14,6 +15,7 @@ export default async function NouveauParticipantPage({
 }) {
   const { cahierId } = await params;
   await requireCahier(cahierId);
+  const parrains = await listParticipantParrains(cahierId);
 
   return (
     <>
@@ -24,7 +26,7 @@ export default async function NouveauParticipantPage({
       <Container>
         <Card>
           <CardContent className="pt-6">
-            <ParticipantForm cahierId={cahierId} />
+            <ParticipantForm cahierId={cahierId} parrains={parrains} />
           </CardContent>
         </Card>
       </Container>

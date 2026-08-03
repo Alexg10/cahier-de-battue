@@ -13,7 +13,11 @@ import { useParticipants, usePointages } from "./hooks";
 import { ParticipantInfoDialog } from "./participant-info-dialog";
 import { removePointage, signPointage } from "./sync";
 
-const ROLE_LABEL = { POSTE: "Posté", TRAQUEUR: "Traqueur" } as const;
+const ROLE_LABEL = {
+  POSTE: "Posté",
+  TRAQUEUR: "Traqueur",
+  ACCOMPAGNANT: "Accompagnant",
+} as const;
 
 /** Affichage officiel : NOM (majuscules) puis prénom. */
 const fullName = (p: { nom: string; prenom: string }) =>
@@ -41,8 +45,8 @@ export function OfflinePointage({
   // Données locales réactives (reflètent les corrections) ; repli sur le prop
   // au premier rendu avant l'hydratation IndexedDB.
   const live = useParticipants(battueId);
+  // Tout le monde émarge (chasseurs, traqueurs, accompagnants).
   const chasseursTries = (live && live.length ? live : chasseurs)
-    .filter((p) => p.estChasseur)
     .sort((a, b) =>
       `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, "fr", {
         sensitivity: "base",
@@ -50,7 +54,7 @@ export function OfflinePointage({
     );
 
   const [openId, setOpenId] = useState<string | null>(null);
-  const [role, setRole] = useState<"POSTE" | "TRAQUEUR">("POSTE");
+  const [role, setRole] = useState<"POSTE" | "TRAQUEUR" | "ACCOMPAGNANT">("POSTE");
   const [cotChasse, setCotChasse] = useState(false);
   const [cotChiens, setCotChiens] = useState(false);
   const [editing, setEditing] = useState<SyncParticipant | null>(null);
@@ -77,7 +81,15 @@ export function OfflinePointage({
     participantId: string,
     existing?: (typeof pointages)[number],
   ) {
-    setRole(existing?.role ?? "POSTE");
+    // Rôle du jour par défaut dérivé du type du participant (modifiable).
+    const p = chasseursTries.find((x) => x.id === participantId);
+    const roleParDefaut =
+      p?.type === "TRAQUEUR"
+        ? "TRAQUEUR"
+        : p?.type === "ACCOMPAGNANT"
+          ? "ACCOMPAGNANT"
+          : "POSTE";
+    setRole(existing?.role ?? roleParDefaut);
     setCotChasse(existing?.cotisationChasse ?? false);
     setCotChiens(existing?.cotisationChiens ?? false);
     setOpenId(participantId);
@@ -87,7 +99,7 @@ export function OfflinePointage({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          {signedCount} / {chasseursTries.length} chasseur
+          {signedCount} / {chasseursTries.length} participant
           {chasseursTries.length > 1 ? "s" : ""} ont signé.
         </p>
         {hasCotisations ? (
@@ -316,12 +328,12 @@ function RoleToggle({
   value,
   onChange,
 }: {
-  value: "POSTE" | "TRAQUEUR";
-  onChange: (r: "POSTE" | "TRAQUEUR") => void;
+  value: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
+  onChange: (r: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT") => void;
 }) {
   return (
     <div className="inline-flex overflow-hidden rounded-full border border-border">
-      {(["POSTE", "TRAQUEUR"] as const).map((r) => (
+      {(["POSTE", "TRAQUEUR", "ACCOMPAGNANT"] as const).map((r) => (
         <button
           key={r}
           type="button"

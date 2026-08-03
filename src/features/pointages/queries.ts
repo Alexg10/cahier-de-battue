@@ -5,7 +5,7 @@ import { participants, pointages } from "@/db/schema";
 
 export type PointageRow = {
   participantId: string;
-  role: "POSTE" | "TRAQUEUR";
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
   hasSignature: boolean;
 };
 

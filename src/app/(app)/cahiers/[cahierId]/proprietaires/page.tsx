@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { requireCahier } from "@/features/cahiers/guard";
+import { listFilleulsByProprietaire } from "@/features/invites/queries";
 import { listProprietaires } from "@/features/proprietaires/queries";
 
 export const metadata: Metadata = { title: "Propriétaires" };
@@ -23,7 +24,10 @@ export default async function ProprietairesPage({
 }) {
   const { cahierId } = await params;
   await requireCahier(cahierId);
-  const proprietaires = await listProprietaires(cahierId);
+  const [proprietaires, filleulsByProp] = await Promise.all([
+    listProprietaires(cahierId),
+    listFilleulsByProprietaire(cahierId),
+  ]);
 
   return (
     <>
@@ -99,6 +103,34 @@ export default async function ProprietairesPage({
                           </span>
                         ) : null}
                       </div>
+                      {p.referentNom ? (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            Référent :
+                          </span>{" "}
+                          {p.referentNom.toUpperCase()} {p.referentPrenom}
+                        </p>
+                      ) : null}
+                      {(filleulsByProp[p.id]?.invites ?? []).length > 0 ? (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            Invités :
+                          </span>{" "}
+                          {(filleulsByProp[p.id]?.invites ?? [])
+                            .map((i) => `${i.nom.toUpperCase()} ${i.prenom}`)
+                            .join(" · ")}
+                        </p>
+                      ) : null}
+                      {(filleulsByProp[p.id]?.participants ?? []).length > 0 ? (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            Personnes invitées :
+                          </span>{" "}
+                          {(filleulsByProp[p.id]?.participants ?? [])
+                            .map((i) => `${i.nom.toUpperCase()} ${i.prenom}`)
+                            .join(" · ")}
+                        </p>
+                      ) : null}
                     </div>
                     <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
                   </Link>

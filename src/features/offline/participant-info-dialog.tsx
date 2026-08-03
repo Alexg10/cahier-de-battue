@@ -88,7 +88,7 @@ function EditForm({
           inputMode="tel"
           value={telephone}
           onChange={(e) => setTelephone(e.target.value)}
-          placeholder="06 12 34 56 78"
+          placeholder="06 XX XX XX XX"
         />
       </Field>
       <Field label="N° de permis de chasser" htmlFor="edit-permis">

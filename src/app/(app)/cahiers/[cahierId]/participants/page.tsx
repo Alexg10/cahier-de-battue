@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   FileSpreadsheet,
+  Phone,
   Printer,
   UserPlus,
 } from "lucide-react";
@@ -131,24 +132,34 @@ export default async function ParticipantsPage({
                     className="flex items-center gap-3 rounded-[var(--radius)] border border-border bg-card p-3 transition-colors hover:bg-accent"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">
-                        {p.nom.toUpperCase()} {p.prenom}
-                      </p>
-                      <div className="mt-1 flex flex-wrap gap-1">
+                      {/* Nom + statut(s) du bureau sur la même ligne quand ça tient. */}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="truncate font-semibold">
+                          {p.nom.toUpperCase()} {p.prenom}
+                        </p>
                         {(rolesByParticipant[p.id] ?? []).map((r) => (
                           <Badge key={r} variant="primary">
                             {ROLE_LABEL[r]}
                           </Badge>
                         ))}
-                        {!p.estChasseur ? (
-                          <Badge variant="muted">Non chasseur</Badge>
-                        ) : null}
-                        {p.telephone ? (
-                          <span className="text-sm text-muted-foreground">
-                            {p.telephone}
-                          </span>
-                        ) : null}
                       </div>
+                      {p.type !== "CHASSEUR" || p.telephone ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          {p.type !== "CHASSEUR" ? (
+                            <Badge variant="muted">
+                              {p.type === "TRAQUEUR"
+                                ? "Traqueur"
+                                : "Accompagnant"}
+                            </Badge>
+                          ) : null}
+                          {p.telephone ? (
+                            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                              <Phone className="size-3.5" />
+                              {p.telephone}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                     <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
                   </Link>

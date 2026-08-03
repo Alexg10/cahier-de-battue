@@ -318,7 +318,7 @@ export async function signPointage(
   battueId: string,
   participantId: string,
   signature: string,
-  role: "POSTE" | "TRAQUEUR",
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT",
   cotisations?: { chasse: boolean; chiens: boolean },
 ) {
   const db = getDB();
@@ -344,7 +344,7 @@ export async function signPointage(
 export async function setPointageRole(
   battueId: string,
   participantId: string,
-  role: "POSTE" | "TRAQUEUR",
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT",
 ) {
   const db = getDB();
   const key = pointageKey(battueId, participantId);
@@ -386,7 +386,7 @@ export async function removePointage(battueId: string, participantId: string) {
 export type InviteParticipationInput = {
   id?: string;
   inviteId: string;
-  role: "POSTE" | "TRAQUEUR";
+  role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
   signature: string | null;
 };
 

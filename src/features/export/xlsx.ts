@@ -22,6 +22,14 @@ const SEXE_LABEL: Record<string, string> = {
 const ROLE_LABEL: Record<string, string> = {
   POSTE: "Posté",
   TRAQUEUR: "Traqueur",
+  ACCOMPAGNANT: "Accompagnant",
+};
+
+/** Ordre d'affichage des rôles : postés, puis traqueurs, puis accompagnants. */
+const ROLE_ORDER: Record<string, number> = {
+  POSTE: 0,
+  TRAQUEUR: 1,
+  ACCOMPAGNANT: 2,
 };
 
 type CahierInfo = { nom: string; territoire: string; saison: string };
@@ -456,7 +464,11 @@ export async function buildBattueWorkbook(
   ];
   styleHeader(sPoint.getRow(1));
   let totalRecolte = 0;
-  for (const p of pointages) {
+  // Postés, puis traqueurs, puis accompagnants (tri stable : ordre par nom conservé).
+  const pointagesTries = [...pointages].sort(
+    (a, b) => (ROLE_ORDER[a.role] ?? 0) - (ROLE_ORDER[b.role] ?? 0),
+  );
+  for (const p of pointagesTries) {
     const montant =
       (p.cotisationChasse ? cotisations.chasse : 0) +
       (p.cotisationChiens ? cotisations.chiens : 0);

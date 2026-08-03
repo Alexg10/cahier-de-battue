@@ -101,6 +101,77 @@ export async function listParrainOptions(
   ];
 }
 
+type Personne = { id: string; nom: string; prenom: string };
+
+/** Filleuls d'un propriétaire : invités + participants qu'il a parrainés. */
+export type FilleulsProprietaire = {
+  invites: Personne[];
+  participants: Personne[];
+};
+
+/**
+ * Pour chaque propriétaire, les invités et les participants qu'il a parrainés
+ * (« invité par » = ce propriétaire).
+ */
+export async function listFilleulsByProprietaire(
+  cahierId: string,
+): Promise<Record<string, FilleulsProprietaire>> {
+  const [inviteRows, partRows] = await Promise.all([
+    db
+      .select({
+        parrainId: invites.parrainId,
+        id: invites.id,
+        nom: invites.nom,
+        prenom: invites.prenom,
+      })
+      .from(invites)
+      .where(
+        and(
+          eq(invites.cahierId, cahierId),
+          eq(invites.parrainType, "PROPRIETAIRE"),
+          isNull(invites.deletedAt),
+        ),
+      )
+      .orderBy(asc(invites.nom), asc(invites.prenom)),
+    db
+      .select({
+        parrainId: participants.parrainId,
+        id: participants.id,
+        nom: participants.nom,
+        prenom: participants.prenom,
+      })
+      .from(participants)
+      .where(
+        and(
+          eq(participants.cahierId, cahierId),
+          eq(participants.parrainType, "PROPRIETAIRE"),
+          isNull(participants.deletedAt),
+        ),
+      )
+      .orderBy(asc(participants.nom), asc(participants.prenom)),
+  ]);
+  const map: Record<string, FilleulsProprietaire> = {};
+  const ensure = (id: string) =>
+    (map[id] ??= { invites: [], participants: [] });
+  for (const r of inviteRows) {
+    if (r.parrainId)
+      ensure(r.parrainId).invites.push({
+        id: r.id,
+        nom: r.nom,
+        prenom: r.prenom,
+      });
+  }
+  for (const r of partRows) {
+    if (r.parrainId)
+      ensure(r.parrainId).participants.push({
+        id: r.id,
+        nom: r.nom,
+        prenom: r.prenom,
+      });
+  }
+  return map;
+}
+
 /** Récupère un invité (personne) en s'assurant qu'il appartient au cahier. */
 export async function getCahierInvite(cahierId: string, id: string) {
   const [row] = await db
@@ -126,7 +197,7 @@ export type BattueInvite = {
     numPermis: string | null;
     numValidation: string | null;
     numAssurance: string | null;
-    role: "POSTE" | "TRAQUEUR";
+    role: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
     signature: string | null;
   };
   parrainNom: string | null;

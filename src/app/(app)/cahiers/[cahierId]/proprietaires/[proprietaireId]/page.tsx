@@ -22,7 +22,8 @@ export default async function EditProprietairePage({
   const proprietaire = await getProprietaire(cahierId, proprietaireId);
   if (!proprietaire) notFound();
 
-  const chasseurs = (await listParticipants(cahierId))
+  const tous = await listParticipants(cahierId);
+  const chasseurs = tous
     .filter((p) => p.estChasseur)
     .map((p) => ({
       id: p.id,
@@ -30,6 +31,11 @@ export default async function EditProprietairePage({
       prenom: p.prenom,
       telephone: p.telephone,
     }));
+  const referents = tous.map((p) => ({
+    id: p.id,
+    nom: p.nom,
+    prenom: p.prenom,
+  }));
 
   return (
     <>
@@ -44,6 +50,7 @@ export default async function EditProprietairePage({
               cahierId={cahierId}
               proprietaire={proprietaire}
               chasseurs={chasseurs}
+              referents={referents}
             />
           </CardContent>
         </Card>

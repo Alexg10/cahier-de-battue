@@ -7,7 +7,10 @@ import { PageHeader } from "@/components/page-header";
 import { requireCahier } from "@/features/cahiers/guard";
 import { deleteParticipant } from "@/features/participants/actions";
 import { ParticipantForm } from "@/features/participants/participant-form";
-import { getParticipant } from "@/features/participants/queries";
+import {
+  getParticipant,
+  listParticipantParrains,
+} from "@/features/participants/queries";
 
 export const metadata: Metadata = { title: "Modifier un participant" };
 
@@ -20,6 +23,7 @@ export default async function EditParticipantPage({
   await requireCahier(cahierId);
   const participant = await getParticipant(cahierId, participantId);
   if (!participant) notFound();
+  const parrains = await listParticipantParrains(cahierId, participantId);
 
   return (
     <>
@@ -30,7 +34,11 @@ export default async function EditParticipantPage({
       <Container className="flex flex-col gap-4">
         <Card>
           <CardContent className="pt-6">
-            <ParticipantForm cahierId={cahierId} participant={participant} />
+            <ParticipantForm
+              cahierId={cahierId}
+              participant={participant}
+              parrains={parrains}
+            />
           </CardContent>
         </Card>
 

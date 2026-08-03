@@ -117,7 +117,7 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
           ) : (
             <OfflinePointage
               battueId={battueId}
-              chasseurs={chasseurs}
+              chasseurs={participants}
               cotisationChasse={cahier.cotisationChasse}
               cotisationChiens={cahier.cotisationChiens}
             />
@@ -164,7 +164,7 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
         <CardContent>
           <OfflineDistribution
             battueId={battueId}
-            participants={chasseurs}
+            participants={participants}
             proprietaires={snapshot.proprietaires}
             invitePersons={snapshot.invitePersons}
             morceaux={cahier.morceaux}

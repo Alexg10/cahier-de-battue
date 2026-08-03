@@ -7,8 +7,19 @@ export const bureauRoleEnum = pgEnum("bureau_role", [
   "SECRETAIRE",
 ]);
 
-/** Rôle d'un chasseur sur une journée de battue (posté par défaut). */
-export const posteRoleEnum = pgEnum("poste_role", ["POSTE", "TRAQUEUR"]);
+/** Rôle d'un participant sur une journée de battue (posté par défaut). */
+export const posteRoleEnum = pgEnum("poste_role", [
+  "POSTE",
+  "TRAQUEUR",
+  "ACCOMPAGNANT",
+]);
+
+/** Type d'un participant dans la société (fixe, défini à la création). */
+export const participantTypeEnum = pgEnum("participant_type", [
+  "CHASSEUR",
+  "TRAQUEUR",
+  "ACCOMPAGNANT",
+]);
 
 /** Sexe d'un animal prélevé. */
 export const sexeEnum = pgEnum("sexe", ["MALE", "FEMELLE", "INDETERMINE"]);

@@ -20,14 +20,19 @@ export type ChasseurOption = {
   telephone: string | null;
 };
 
+/** Participant proposé comme référent (contact) d'un propriétaire. */
+export type ReferentOption = { id: string; nom: string; prenom: string };
+
 export function ProprietaireForm({
   cahierId,
   proprietaire,
   chasseurs = [],
+  referents = [],
 }: {
   cahierId: string;
   proprietaire?: Proprietaire;
   chasseurs?: ChasseurOption[];
+  referents?: ReferentOption[];
 }) {
   const action = proprietaire ? updateProprietaire : createProprietaire;
   const [state, formAction, pending] = useActionState<FormState, FormData>(
@@ -43,6 +48,8 @@ export function ProprietaireForm({
   const [participantId, setParticipantId] = useState(
     proprietaire?.participantId ?? "",
   );
+  // Référent (participant contact), indépendant du lien chasseur.
+  const [referentId, setReferentId] = useState(proprietaire?.referentId ?? "");
 
   function choisirChasseur(id: string) {
     setParticipantId(id);
@@ -57,6 +64,7 @@ export function ProprietaireForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="cahierId" value={cahierId} />
       <input type="hidden" name="participantId" value={participantId} />
+      <input type="hidden" name="referentId" value={referentId} />
       {proprietaire ? (
         <input type="hidden" name="id" value={proprietaire.id} />
       ) : null}
@@ -113,9 +121,30 @@ export function ProprietaireForm({
           inputMode="tel"
           value={telephone}
           onChange={(e) => setTelephone(e.target.value)}
-          placeholder="06 12 34 56 78"
+          placeholder="06 XX XX XX XX"
         />
       </Field>
+
+      {referents.length > 0 ? (
+        <Field
+          label="Référent"
+          htmlFor="referent"
+          hint="Participant contact du propriétaire (ex. pour lui remettre la viande)."
+        >
+          <Select
+            id="referent"
+            value={referentId}
+            onChange={(e) => setReferentId(e.target.value)}
+          >
+            <option value="">— Aucun —</option>
+            {referents.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.nom.toUpperCase()} {r.prenom}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
 
       {state?.error ? (
         <p className="text-sm font-medium text-destructive">{state.error}</p>

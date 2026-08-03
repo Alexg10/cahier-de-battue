@@ -67,6 +67,9 @@ async function main() {
         telephone: p.tel,
         numAssurance: `ASS-2025-${100 + i}`,
         numValidation: `VAL-2025-${200 + i}`,
+        type: ((p.chasseur ?? true) ? "CHASSEUR" : "ACCOMPAGNANT") as
+          | "CHASSEUR"
+          | "ACCOMPAGNANT",
         estChasseur: p.chasseur ?? true,
       })),
     )

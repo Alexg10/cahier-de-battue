@@ -11,7 +11,11 @@ import type { Participant } from "@/features/participants/queries";
 import type { PointageRow } from "./queries";
 import { removePointage, setPointageRole, signPointage } from "./actions";
 
-const ROLE_LABEL = { POSTE: "Posté", TRAQUEUR: "Traqueur" } as const;
+const ROLE_LABEL = {
+  POSTE: "Posté",
+  TRAQUEUR: "Traqueur",
+  ACCOMPAGNANT: "Accompagnant",
+} as const;
 
 export function PointageSection({
   battueId,
@@ -24,13 +28,13 @@ export function PointageSection({
 }) {
   const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
-  const [role, setRole] = useState<"POSTE" | "TRAQUEUR">("POSTE");
+  const [role, setRole] = useState<"POSTE" | "TRAQUEUR" | "ACCOMPAGNANT">("POSTE");
   const [pending, startTransition] = useTransition();
 
   const byId = new Map(pointages.map((p) => [p.participantId, p]));
   const signedCount = pointages.filter((p) => p.hasSignature).length;
 
-  function openSign(id: string, currentRole?: "POSTE" | "TRAQUEUR") {
+  function openSign(id: string, currentRole?: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT") {
     setRole(currentRole ?? "POSTE");
     setOpenId(id);
   }
@@ -43,7 +47,7 @@ export function PointageSection({
     });
   }
 
-  function handleRole(participantId: string, r: "POSTE" | "TRAQUEUR") {
+  function handleRole(participantId: string, r: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT") {
     startTransition(async () => {
       await setPointageRole({ battueId, participantId, role: r });
       router.refresh();
@@ -166,8 +170,8 @@ function RoleToggle({
   onChange,
   disabled,
 }: {
-  value: "POSTE" | "TRAQUEUR";
-  onChange: (r: "POSTE" | "TRAQUEUR") => void;
+  value: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT";
+  onChange: (r: "POSTE" | "TRAQUEUR" | "ACCOMPAGNANT") => void;
   disabled?: boolean;
 }) {
   return (

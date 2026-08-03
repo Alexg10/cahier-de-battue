@@ -27,6 +27,14 @@ const SEXE_LABEL: Record<string, string> = {
 const ROLE_LABEL: Record<string, string> = {
   POSTE: "Posté",
   TRAQUEUR: "Traqueur",
+  ACCOMPAGNANT: "Accompagnant",
+};
+
+/** Ordre d'affichage : postés, puis traqueurs, puis accompagnants. */
+const ROLE_ORDER: Record<string, number> = {
+  POSTE: 0,
+  TRAQUEUR: 1,
+  ACCOMPAGNANT: 2,
 };
 
 function SignatureImg({ src }: { src: string | null }) {
@@ -206,7 +214,13 @@ export default async function ImpressionPage({
                 </td>
               </tr>
             ) : (
-              pointages.map((p) => (
+              // Postés, puis traqueurs, puis accompagnants (tri stable).
+              [...pointages]
+                .sort(
+                  (a, b) =>
+                    (ROLE_ORDER[a.role] ?? 0) - (ROLE_ORDER[b.role] ?? 0),
+                )
+                .map((p) => (
                 <tr key={p.participantId} className="border-b border-gray-300">
                   <td className="py-1">
                     {p.nom.toUpperCase()} {p.prenom}

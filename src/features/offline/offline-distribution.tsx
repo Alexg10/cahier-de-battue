@@ -20,10 +20,11 @@ import type {
 
 type RecipientType = "PARTICIPANT" | "PROPRIETAIRE" | "INVITE";
 
-const TYPE_BADGE: Record<RecipientType, string> = {
-  PARTICIPANT: "Chasseur",
-  PROPRIETAIRE: "Propriétaire",
-  INVITE: "Invité",
+/** Libellé du type d'un participant bénéficiaire. */
+const PARTICIPANT_TYPE_BADGE: Record<string, string> = {
+  CHASSEUR: "Chasseur",
+  TRAQUEUR: "Traqueur",
+  ACCOMPAGNANT: "Accompagnant",
 };
 
 /** Code du gigot attribué d'office (référence la liste des morceaux). */
@@ -74,32 +75,40 @@ export function OfflineDistribution({
       linkedPropIdsByParticipant.set(p.participantId, arr);
     }
   }
-  const recipients: { type: RecipientType; id: string; nom: string; prenom: string }[] =
-    [
-      ...participants
-        .filter((p) => signedIds.has(p.id) || landownerIds.has(p.id))
-        .map((p) => ({
-          type: "PARTICIPANT" as const,
-          id: p.id,
-          nom: p.nom,
-          prenom: p.prenom,
-        })),
-      // Seuls les propriétaires « seuls » (non liés à un chasseur) ont une ligne.
-      ...proprietaires
-        .filter((p) => !p.participantId)
-        .map((p) => ({
-          type: "PROPRIETAIRE" as const,
-          id: p.id,
-          nom: p.nom,
-          prenom: p.prenom,
-        })),
-      ...invitesPresents.map((i) => ({
-        type: "INVITE" as const,
-        id: i.id,
-        nom: i.nom,
-        prenom: i.prenom,
+  const recipients: {
+    type: RecipientType;
+    id: string;
+    nom: string;
+    prenom: string;
+    badge: string;
+  }[] = [
+    ...participants
+      .filter((p) => signedIds.has(p.id) || landownerIds.has(p.id))
+      .map((p) => ({
+        type: "PARTICIPANT" as const,
+        id: p.id,
+        nom: p.nom,
+        prenom: p.prenom,
+        badge: PARTICIPANT_TYPE_BADGE[p.type] ?? "Chasseur",
       })),
-    ].sort((a, b) =>
+    // Seuls les propriétaires « seuls » (non liés à un chasseur) ont une ligne.
+    ...proprietaires
+      .filter((p) => !p.participantId)
+      .map((p) => ({
+        type: "PROPRIETAIRE" as const,
+        id: p.id,
+        nom: p.nom,
+        prenom: p.prenom,
+        badge: "Propriétaire",
+      })),
+    ...invitesPresents.map((i) => ({
+      type: "INVITE" as const,
+      id: i.id,
+      nom: i.nom,
+      prenom: i.prenom,
+      badge: "Invité",
+    })),
+  ].sort((a, b) =>
       `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, "fr", {
         sensitivity: "base",
       }),
@@ -154,7 +163,7 @@ export function OfflineDistribution({
                   <span className="min-w-0 flex-1 truncate font-semibold">
                     {r.nom.toUpperCase()} {r.prenom}
                   </span>
-                  <Badge variant="muted">{TYPE_BADGE[r.type]}</Badge>
+                  <Badge variant="muted">{r.badge}</Badge>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5">

@@ -10,23 +10,33 @@ import {
   updateParticipant,
   type FormState,
 } from "./actions";
-import type { Participant } from "./queries";
+import type { ParrainPersonne, Participant } from "./queries";
 
 export function ParticipantForm({
   cahierId,
   participant,
+  parrains = { participants: [], proprietaires: [] },
 }: {
   cahierId: string;
   participant?: Participant;
+  parrains?: { participants: ParrainPersonne[]; proprietaires: ParrainPersonne[] };
 }) {
   const action = participant ? updateParticipant : createParticipant;
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     action,
     undefined,
   );
-  const [estChasseur, setEstChasseur] = useState(
-    participant?.estChasseur ?? true,
+  const [type, setType] = useState<"CHASSEUR" | "TRAQUEUR" | "ACCOMPAGNANT">(
+    participant?.type ?? "CHASSEUR",
   );
+  const estChasseur = type === "CHASSEUR";
+  const [parrain, setParrain] = useState(
+    participant?.parrainType && participant?.parrainId
+      ? `${participant.parrainType}:${participant.parrainId}`
+      : "",
+  );
+  const hasParrains =
+    parrains.participants.length > 0 || parrains.proprietaires.length > 0;
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -63,31 +73,68 @@ export function ParticipantForm({
           type="tel"
           inputMode="tel"
           defaultValue={participant?.telephone ?? ""}
-          placeholder="06 12 34 56 78"
+          placeholder="06 XX XX XX XX"
         />
       </Field>
 
-      <label className="flex items-center gap-3 rounded-[var(--radius)] border border-border bg-card p-3">
-        <input
-          type="checkbox"
-          name="estChasseur"
-          checked={estChasseur}
-          onChange={(e) => setEstChasseur(e.target.checked)}
-          className="size-6 accent-primary"
-        />
-        <span className="text-sm font-medium">
-          Chasseur
-          <span className="block text-xs font-normal text-muted-foreground">
-            Décochez pour un membre du bureau non chasseur (ex. secrétaire).
-          </span>
-        </span>
-      </label>
+      <Field
+        label="Type de participant"
+        htmlFor="type"
+        hint="Le permis n'est demandé que pour les chasseurs. Le rôle du jour (posté/traqueur) reste modifiable au pointage."
+      >
+        <Select
+          id="type"
+          name="type"
+          value={type}
+          onChange={(e) =>
+            setType(e.target.value as "CHASSEUR" | "TRAQUEUR" | "ACCOMPAGNANT")
+          }
+        >
+          <option value="CHASSEUR">Chasseur</option>
+          <option value="TRAQUEUR">Traqueur</option>
+          <option value="ACCOMPAGNANT">Accompagnant</option>
+        </Select>
+      </Field>
 
-      {estChasseur ? (
-        <div className="grid gap-4">
-          <p className="text-sm font-bold">État civil & coordonnées</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Date de naissance" htmlFor="dateNaissance">
+      {hasParrains ? (
+        <Field
+          label="Invité par"
+          htmlFor="parrain"
+          hint="Facultatif : le participant ou le propriétaire qui l'a invité."
+        >
+          <Select
+            id="parrain"
+            name="parrain"
+            value={parrain}
+            onChange={(e) => setParrain(e.target.value)}
+          >
+            <option value="">— Aucun —</option>
+            {parrains.participants.length > 0 ? (
+              <optgroup label="Participants">
+                {parrains.participants.map((p) => (
+                  <option key={p.id} value={`PARTICIPANT:${p.id}`}>
+                    {p.nom.toUpperCase()} {p.prenom}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            {parrains.proprietaires.length > 0 ? (
+              <optgroup label="Propriétaires">
+                {parrains.proprietaires.map((p) => (
+                  <option key={p.id} value={`PROPRIETAIRE:${p.id}`}>
+                    {p.nom.toUpperCase()} {p.prenom}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+          </Select>
+        </Field>
+      ) : null}
+
+      <div className="grid gap-4">
+        <p className="text-sm font-bold">État civil & coordonnées</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date de naissance" htmlFor="dateNaissance">
               <Input
                 id="dateNaissance"
                 name="dateNaissance"
@@ -122,8 +169,11 @@ export function ParticipantForm({
               autoComplete="off"
             />
           </Field>
+      </div>
 
-          <p className="mt-2 text-sm font-bold">Permis de chasser</p>
+      {estChasseur ? (
+        <div className="grid gap-4">
+          <p className="text-sm font-bold">Permis de chasser</p>
           <Field label="N° de permis de chasser" htmlFor="numPermis">
             <Input
               id="numPermis"

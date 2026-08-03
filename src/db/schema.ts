@@ -16,6 +16,7 @@ import {
   bureauRoleEnum,
   distributionRecipientEnum,
   inviteParrainEnum,
+  participantTypeEnum,
   posteRoleEnum,
   sexeEnum,
   timbreEnum,
@@ -150,8 +151,19 @@ export const participants = pgTable("participants", {
   adresseAssurance: text("adresse_assurance"),
   /** N° d'assurance annuelle. */
   numAssurance: text("num_assurance"),
-  /** Faux = membre du bureau non chasseur (ex. secrétaire). */
+  /**
+   * Type du participant : chasseur (avec permis), traqueur ou accompagnant.
+   * Source de vérité ; `estChasseur` en est dérivé (= type CHASSEUR).
+   */
+  type: participantTypeEnum("type").notNull().default("CHASSEUR"),
+  /** Dérivé de `type` (= CHASSEUR) ; conservé pour les requêtes « chasseur ». */
   estChasseur: boolean("est_chasseur").notNull().default(true),
+  /**
+   * Parrain facultatif (« invité par ») : un autre participant ou un
+   * propriétaire (référence polymorphe, sans FK). Null si non renseigné.
+   */
+  parrainType: inviteParrainEnum("parrain_type"),
+  parrainId: uuid("parrain_id"),
   ...tracking,
 });
 
@@ -170,6 +182,13 @@ export const proprietaires = pgTable("proprietaires", {
    * distribution du gibier. `set null` si le participant est supprimé.
    */
   participantId: uuid("participant_id").references(() => participants.id, {
+    onDelete: "set null",
+  }),
+  /**
+   * Référent : participant « contact » du propriétaire (à qui remettre la
+   * viande, etc.). Distinct de `participantId` (qui signifie « est ce chasseur »).
+   */
+  referentId: uuid("referent_id").references(() => participants.id, {
     onDelete: "set null",
   }),
   ...tracking,
