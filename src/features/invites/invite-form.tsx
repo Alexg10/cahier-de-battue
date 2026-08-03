@@ -1,102 +1,84 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { SignaturePad } from "@/components/signature-pad";
+import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import type { Participant } from "@/features/participants/queries";
-import { createInvite, updateInvite } from "./actions";
-import type { Invite } from "./queries";
+import { createInvite, updateInvite, type FormState } from "./actions";
+import type { CahierInvite } from "./queries";
+
+/** Option de parrain : un chasseur ou un propriétaire. */
+export type ParrainOption = { value: string; label: string };
 
 export function InviteForm({
-  battueId,
-  participants,
+  cahierId,
+  parrains,
   invite,
-  backHref,
 }: {
-  battueId: string;
-  participants: Participant[];
-  invite?: Invite;
-  backHref: string;
+  cahierId: string;
+  parrains: ParrainOption[];
+  invite?: CahierInvite;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [role, setRole] = useState<"POSTE" | "TRAQUEUR">(
-    invite?.role ?? "POSTE",
+  const action = invite ? updateInvite : createInvite;
+  const [state, formAction, pending] = useActionState<FormState, FormData>(
+    action,
+    undefined,
   );
-  const [signature, setSignature] = useState<string | null>(
-    invite?.signature ?? null,
-  );
-  const [signing, setSigning] = useState(false);
-
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const input = {
-      battueId,
-      participantId: String(fd.get("participantId") ?? ""),
-      nom: String(fd.get("nom") ?? ""),
-      prenom: String(fd.get("prenom") ?? ""),
-      numPermis: String(fd.get("numPermis") ?? ""),
-      numValidation: String(fd.get("numValidation") ?? ""),
-      numAssurance: String(fd.get("numAssurance") ?? ""),
-      role,
-      signature,
-    };
-    startTransition(async () => {
-      const res = invite
-        ? await updateInvite(invite.id, input)
-        : await createInvite(input);
-      if (res?.error) {
-        setError(res.error);
-        return;
-      }
-      router.push(backHref);
-      router.refresh();
-    });
-  }
+  const parrainDefault = invite
+    ? `${invite.parrainType}:${invite.parrainId}`
+    : "";
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="cahierId" value={cahierId} />
+      {invite ? <input type="hidden" name="id" value={invite.id} /> : null}
+
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Prénom" htmlFor="prenom" required>
-          <Input id="prenom" name="prenom" required defaultValue={invite?.prenom ?? ""} />
-        </Field>
         <Field label="Nom" htmlFor="nom" required>
-          <Input id="nom" name="nom" required defaultValue={invite?.nom ?? ""} />
+          <Input
+            id="nom"
+            name="nom"
+            required
+            defaultValue={invite?.nom ?? ""}
+            autoComplete="off"
+          />
+        </Field>
+        <Field label="Prénom" htmlFor="prenom" required>
+          <Input
+            id="prenom"
+            name="prenom"
+            required
+            defaultValue={invite?.prenom ?? ""}
+            autoComplete="off"
+          />
         </Field>
       </div>
 
       <Field
-        label="Invité par (membre)"
-        htmlFor="participantId"
+        label="Invité par"
+        htmlFor="parrain"
         required
-        hint="Chaque invité est rattaché à un membre de la chasse."
+        hint="Chaque invité est parrainé par un chasseur ou un propriétaire."
       >
-        <Select
-          id="participantId"
-          name="participantId"
-          required
-          defaultValue={invite?.participantId ?? ""}
-        >
+        <Select id="parrain" name="parrain" required defaultValue={parrainDefault}>
           <option value="" disabled>
-            — Choisir un membre —
+            — Choisir un parrain —
           </option>
-          {participants.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nom.toUpperCase()} {p.prenom}
+          {parrains.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label}
             </option>
           ))}
         </Select>
       </Field>
 
       <Field label="N° de permis" htmlFor="numPermis">
-        <Input id="numPermis" name="numPermis" defaultValue={invite?.numPermis ?? ""} />
+        <Input
+          id="numPermis"
+          name="numPermis"
+          defaultValue={invite?.numPermis ?? ""}
+        />
       </Field>
       <Field label="N° de validation annuelle" htmlFor="numValidation">
         <Input
@@ -113,61 +95,15 @@ export function InviteForm({
         />
       </Field>
 
-      <Field label="Poste">
-        <div className="inline-flex overflow-hidden rounded-full border border-border">
-          {(["POSTE", "TRAQUEUR"] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRole(r)}
-              className={cn(
-                "px-4 py-2 text-sm font-semibold transition-colors",
-                role === r
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground",
-              )}
-            >
-              {r === "POSTE" ? "Posté" : "Traqueur"}
-            </button>
-          ))}
-        </div>
-      </Field>
-
-      <Field label="Signature de l'invité">
-        {signing ? (
-          <SignaturePad
-            onSave={(url) => {
-              setSignature(url);
-              setSigning(false);
-            }}
-            onCancel={() => setSigning(false)}
-          />
-        ) : signature ? (
-          <div className="flex items-center gap-3">
-            <div className="flex h-20 flex-1 items-center justify-center rounded-[var(--radius)] border border-border bg-white p-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={signature}
-                alt="Signature invité"
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-            <Button type="button" variant="secondary" onClick={() => setSigning(true)}>
-              Modifier
-            </Button>
-          </div>
-        ) : (
-          <Button type="button" variant="secondary" onClick={() => setSigning(true)}>
-            Faire signer l&apos;invité
-          </Button>
-        )}
-      </Field>
-
-      {error ? (
-        <p className="text-sm font-medium text-destructive">{error}</p>
+      {state?.error ? (
+        <p className="text-sm font-medium text-destructive">{state.error}</p>
       ) : null}
       <Button type="submit" size="lg" block disabled={pending}>
-        {pending ? "Enregistrement…" : invite ? "Enregistrer" : "Ajouter l'invité"}
+        {pending
+          ? "Enregistrement…"
+          : invite
+            ? "Enregistrer"
+            : "Ajouter l'invité"}
       </Button>
     </form>
   );

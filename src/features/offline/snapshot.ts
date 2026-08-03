@@ -6,12 +6,13 @@ import {
   bureauMembres,
   cahiers,
   distributions,
-  invites,
+  inviteParticipations,
   participants,
   pointages,
   prelevements,
   proprietaires,
 } from "@/db/schema";
+import { listCahierInvites } from "@/features/invites/queries";
 import type { BattueSnapshot } from "./types";
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
@@ -45,10 +46,11 @@ export async function battueSnapshot(
     participantRows,
     presidentRow,
     pointageRows,
-    inviteRows,
+    participationRows,
     prelevementRows,
     proprietaireRows,
     distributionRows,
+    invitePersonRows,
   ] = await Promise.all([
       db
         .select()
@@ -79,8 +81,13 @@ export async function battueSnapshot(
         ),
       db
         .select()
-        .from(invites)
-        .where(and(eq(invites.battueId, battueId), isNull(invites.deletedAt))),
+        .from(inviteParticipations)
+        .where(
+          and(
+            eq(inviteParticipations.battueId, battueId),
+            isNull(inviteParticipations.deletedAt),
+          ),
+        ),
       db
         .select()
         .from(prelevements)
@@ -109,6 +116,7 @@ export async function battueSnapshot(
             isNull(distributions.deletedAt),
           ),
         ),
+      listCahierInvites(cahierId),
     ]);
 
   return {
@@ -161,18 +169,23 @@ export async function battueSnapshot(
       updatedAt: iso(p.updatedAt)!,
       deletedAt: null,
     })),
-    invites: inviteRows.map((i) => ({
+    invitePersons: invitePersonRows.map((i) => ({
       id: i.id,
-      battueId: i.battueId,
-      participantId: i.participantId,
       nom: i.nom,
       prenom: i.prenom,
       numPermis: i.numPermis,
       numValidation: i.numValidation,
       numAssurance: i.numAssurance,
-      role: i.role,
-      signature: i.signature,
-      updatedAt: iso(i.updatedAt)!,
+      parrainNom: i.parrainNom,
+      parrainPrenom: i.parrainPrenom,
+    })),
+    inviteParticipations: participationRows.map((p) => ({
+      id: p.id,
+      battueId: p.battueId,
+      inviteId: p.inviteId,
+      role: p.role,
+      signature: p.signature,
+      updatedAt: iso(p.updatedAt)!,
       deletedAt: null,
     })),
     prelevements: prelevementRows.map((p) => ({

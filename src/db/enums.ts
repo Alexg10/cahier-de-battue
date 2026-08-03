@@ -29,3 +29,9 @@ export const distributionRecipientEnum = pgEnum("distribution_recipient", [
   "PROPRIETAIRE",
   "INVITE",
 ]);
+
+/** Type de parrain d'un invité : chasseur (participant) ou propriétaire. */
+export const inviteParrainEnum = pgEnum("invite_parrain", [
+  "PARTICIPANT",
+  "PROPRIETAIRE",
+]);

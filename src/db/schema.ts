@@ -15,6 +15,7 @@ import {
 import {
   bureauRoleEnum,
   distributionRecipientEnum,
+  inviteParrainEnum,
   posteRoleEnum,
   sexeEnum,
   timbreEnum,
@@ -247,26 +248,45 @@ export const pointages = pgTable(
   (t) => [unique("pointage_unique").on(t.battueId, t.participantId)],
 );
 
-/** Invité/accompagnateur ponctuel sur une battue, rattaché à un participant. */
+/**
+ * Invité : personne extérieure rattachée au cahier, parrainée par un membre
+ * (chasseur) ou un propriétaire. Réutilisable sur plusieurs battues via
+ * `inviteParticipations`.
+ */
 export const invites = pgTable("invites", {
   id: uuid("id").primaryKey().defaultRandom(),
-  battueId: uuid("battue_id")
+  cahierId: uuid("cahier_id")
     .notNull()
-    .references(() => battues.id, { onDelete: "cascade" }),
-  /** Participant (membre) qui invite/parraine. */
-  participantId: uuid("participant_id")
-    .notNull()
-    .references(() => participants.id, { onDelete: "cascade" }),
+    .references(() => cahiers.id, { onDelete: "cascade" }),
+  /** Parrain : chasseur (participant) ou propriétaire (référence polymorphe). */
+  parrainType: inviteParrainEnum("parrain_type").notNull(),
+  parrainId: uuid("parrain_id").notNull(),
   nom: text("nom").notNull(),
   prenom: text("prenom").notNull(),
   numPermis: text("num_permis"),
   numValidation: text("num_validation"),
   /** N° de contrat d'assurance. */
   numAssurance: text("num_assurance"),
-  role: posteRoleEnum("role").notNull().default("POSTE"),
-  signature: text("signature"),
   ...tracking,
 });
+
+/** Participation d'un invité à une battue (présence, poste, signature du jour). */
+export const inviteParticipations = pgTable(
+  "invite_participations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    battueId: uuid("battue_id")
+      .notNull()
+      .references(() => battues.id, { onDelete: "cascade" }),
+    inviteId: uuid("invite_id")
+      .notNull()
+      .references(() => invites.id, { onDelete: "cascade" }),
+    role: posteRoleEnum("role").notNull().default("POSTE"),
+    signature: text("signature"),
+    ...tracking,
+  },
+  (t) => [unique("invite_participation_unique").on(t.battueId, t.inviteId)],
+);
 
 /** Animal prélevé pendant la battue (tableau de chasse). */
 export const prelevements = pgTable("prelevements", {

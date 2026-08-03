@@ -5,7 +5,7 @@ import {
   participantKey,
   pointageKey,
   type LocalDistribution,
-  type LocalInvite,
+  type LocalInviteParticipation,
   type LocalParticipant,
   type LocalPointage,
   type LocalPrelevement,
@@ -13,7 +13,7 @@ import {
 import type {
   BattueSnapshot,
   SyncDistribution,
-  SyncInvite,
+  SyncInviteParticipation,
   SyncParticipant,
   SyncPrelevement,
   SyncPushBody,
@@ -39,6 +39,7 @@ export async function mergeSnapshot(snap: BattueSnapshot) {
     presidentId: snap.presidentId,
     participants: snap.participants,
     proprietaires: snap.proprietaires,
+    invitePersons: snap.invitePersons,
     pulledAt: now(),
   });
 
@@ -82,7 +83,7 @@ export async function mergeSnapshot(snap: BattueSnapshot) {
     }
   }
 
-  await mergeById(db.invites, battueId, snap.invites);
+  await mergeById(db.inviteParticipations, battueId, snap.inviteParticipations);
   await mergeById(db.prelevements, battueId, snap.prelevements);
   await mergeById(db.distributions, battueId, snap.distributions);
 
@@ -107,7 +108,7 @@ async function mergeById<T extends { id: string; dirty: 0 | 1 }>(
     where: (i: string) => { equals: (v: string) => { toArray: () => Promise<T[]> } };
   },
   battueId: string,
-  serverRows: (SyncInvite | SyncPrelevement | SyncDistribution)[],
+  serverRows: (SyncInviteParticipation | SyncPrelevement | SyncDistribution)[],
 ) {
   const serverIds = new Set(serverRows.map((r) => r.id));
   for (const r of serverRows) {
@@ -166,7 +167,7 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
   const db = getDB();
   const [pts, invs, prels, parts, dists, deleg] = await Promise.all([
     db.pointages.where("battueId").equals(battueId).toArray(),
-    db.invites.where("battueId").equals(battueId).toArray(),
+    db.inviteParticipations.where("battueId").equals(battueId).toArray(),
     db.prelevements.where("battueId").equals(battueId).toArray(),
     db.participants.where("battueId").equals(battueId).toArray(),
     db.distributions.where("battueId").equals(battueId).toArray(),
@@ -198,7 +199,9 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
         }
       : undefined,
     pointages: dirtyPts.map(stripPointage),
-    invites: dirtyInvs.map(stripRow) as LocalInvite[],
+    inviteParticipations: dirtyInvs.map(
+      stripRow,
+    ) as LocalInviteParticipation[],
     prelevements: dirtyPrels.map(stripRow) as LocalPrelevement[],
     participants: dirtyParts.map(stripParticipant),
     distributions: dirtyDists.map(stripRow) as LocalDistribution[],
@@ -229,7 +232,9 @@ export async function sync(battueId: string): Promise<boolean> {
           p.updatedAt,
         ]),
       );
-      const pushedInv = new Map(body.invites.map((i) => [i.id, i.updatedAt]));
+      const pushedInv = new Map(
+        body.inviteParticipations.map((i) => [i.id, i.updatedAt]),
+      );
       const pushedPrel = new Map(
         body.prelevements.map((p) => [p.id, p.updatedAt]),
       );
@@ -258,8 +263,9 @@ export async function sync(battueId: string): Promise<boolean> {
         if (l && l.updatedAt === up) await db.pointages.update(key, { dirty: 0 });
       }
       for (const [id, up] of pushedInv) {
-        const l = await db.invites.get(id);
-        if (l && l.updatedAt === up) await db.invites.update(id, { dirty: 0 });
+        const l = await db.inviteParticipations.get(id);
+        if (l && l.updatedAt === up)
+          await db.inviteParticipations.update(id, { dirty: 0 });
       }
       for (const [id, up] of pushedPrel) {
         const l = await db.prelevements.get(id);
@@ -377,30 +383,24 @@ export async function removePointage(battueId: string, participantId: string) {
   triggerSync(battueId);
 }
 
-export type InviteInput = {
+export type InviteParticipationInput = {
   id?: string;
-  participantId: string;
-  nom: string;
-  prenom: string;
-  numPermis: string | null;
-  numValidation: string | null;
-  numAssurance: string | null;
+  inviteId: string;
   role: "POSTE" | "TRAQUEUR";
   signature: string | null;
 };
 
-export async function upsertInvite(battueId: string, input: InviteInput) {
+/** Ajoute/met à jour la participation d'un invité (personne) à la battue. */
+export async function upsertInviteParticipation(
+  battueId: string,
+  input: InviteParticipationInput,
+) {
   const db = getDB();
   const id = input.id ?? uuid();
-  await db.invites.put({
+  await db.inviteParticipations.put({
     id,
     battueId,
-    participantId: input.participantId,
-    nom: input.nom,
-    prenom: input.prenom,
-    numPermis: input.numPermis,
-    numValidation: input.numValidation,
-    numAssurance: input.numAssurance,
+    inviteId: input.inviteId,
     role: input.role,
     signature: input.signature,
     updatedAt: now(),
@@ -411,9 +411,13 @@ export async function upsertInvite(battueId: string, input: InviteInput) {
   return id;
 }
 
-export async function removeInvite(battueId: string, id: string) {
+export async function removeInviteParticipation(battueId: string, id: string) {
   const db = getDB();
-  await db.invites.update(id, { deletedAt: now(), updatedAt: now(), dirty: 1 });
+  await db.inviteParticipations.update(id, {
+    deletedAt: now(),
+    updatedAt: now(),
+    dirty: 1,
+  });
   triggerSync(battueId);
 }
 

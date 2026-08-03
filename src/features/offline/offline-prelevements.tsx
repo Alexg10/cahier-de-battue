@@ -9,9 +9,13 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { LocalPrelevement } from "./db";
-import { useInvites, usePointages, usePrelevements } from "./hooks";
+import {
+  useInviteParticipations,
+  usePointages,
+  usePrelevements,
+} from "./hooks";
 import { removePrelevement, upsertPrelevement } from "./sync";
-import type { SyncParticipant } from "./types";
+import type { SyncInvitePerson, SyncParticipant } from "./types";
 
 const SEXE_LABEL: Record<string, string> = {
   MALE: "Mâle",
@@ -23,13 +27,15 @@ export function OfflinePrelevements({
   battueId,
   especes,
   chasseurs,
+  invitePersons,
 }: {
   battueId: string;
   especes: string[];
   chasseurs: SyncParticipant[];
+  invitePersons: SyncInvitePerson[];
 }) {
   const prelevements = usePrelevements(battueId) ?? [];
-  const invites = useInvites(battueId) ?? [];
+  const participations = useInviteParticipations(battueId) ?? [];
   const pointages = usePointages(battueId) ?? [];
   const [editing, setEditing] = useState<null | "new" | LocalPrelevement>(null);
 
@@ -37,13 +43,19 @@ export function OfflinePrelevements({
   const signedIds = new Set(pointages.map((p) => p.participantId));
   const chasseursSignes = chasseurs.filter((c) => signedIds.has(c.id));
 
+  // Invités proposés comme tireur : ceux présents sur la battue (participations).
+  const personById = new Map(invitePersons.map((p) => [p.id, p]));
+  const invitesPresents = participations
+    .map((part) => personById.get(part.inviteId))
+    .filter((p): p is SyncInvitePerson => Boolean(p));
+
   function tireurNom(p: LocalPrelevement) {
     if (p.tireurParticipantId) {
       const c = chasseurs.find((x) => x.id === p.tireurParticipantId);
       return c ? `${c.nom.toUpperCase()} ${c.prenom}` : null;
     }
     if (p.tireurInviteId) {
-      const i = invites.find((x) => x.id === p.tireurInviteId);
+      const i = personById.get(p.tireurInviteId);
       return i ? `${i.nom.toUpperCase()} ${i.prenom} (invité)` : null;
     }
     return null;
@@ -56,7 +68,7 @@ export function OfflinePrelevements({
           battueId={battueId}
           especes={especes}
           chasseurs={chasseursSignes}
-          invites={invites.map((i) => ({
+          invites={invitesPresents.map((i) => ({
             id: i.id,
             nom: i.nom,
             prenom: i.prenom,

@@ -22,18 +22,14 @@ export function usePointages(battueId: string) {
   );
 }
 
-export function useInvites(battueId: string) {
+export function useInviteParticipations(battueId: string) {
   return useLiveQuery(
     async () => {
       const rows = await getDB()
-        .invites.where("battueId")
+        .inviteParticipations.where("battueId")
         .equals(battueId)
         .toArray();
-      return rows
-        .filter((r) => !r.deletedAt)
-        .sort((a, b) =>
-          `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`),
-        );
+      return rows.filter((r) => !r.deletedAt);
     },
     [battueId],
     [],
@@ -98,7 +94,7 @@ export function useDirtyCount(battueId: string) {
       const db = getDB();
       const [pts, invs, prels, parts, dists, deleg] = await Promise.all([
         db.pointages.where("battueId").equals(battueId).toArray(),
-        db.invites.where("battueId").equals(battueId).toArray(),
+        db.inviteParticipations.where("battueId").equals(battueId).toArray(),
         db.prelevements.where("battueId").equals(battueId).toArray(),
         db.participants.where("battueId").equals(battueId).toArray(),
         db.distributions.where("battueId").equals(battueId).toArray(),

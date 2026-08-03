@@ -123,11 +123,9 @@ export async function saisonDistributionMatrix(
               prenom: invites.prenom,
             })
             .from(invites)
-            .innerJoin(battues, eq(battues.id, invites.battueId))
             .where(
               and(
-                eq(battues.cahierId, cahierId),
-                isNull(battues.deletedAt),
+                eq(invites.cahierId, cahierId),
                 isNull(invites.deletedAt),
               ),
             ),

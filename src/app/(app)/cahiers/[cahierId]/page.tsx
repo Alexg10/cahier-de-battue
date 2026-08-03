@@ -8,6 +8,7 @@ import {
   Map,
   Settings,
   Target,
+  UserPlus,
   Users,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -54,6 +55,12 @@ const tuiles = [
     icon: Home,
     titre: "Propriétaires",
     desc: "Propriétaires fonciers",
+  },
+  {
+    href: "invites",
+    icon: UserPlus,
+    titre: "Invités",
+    desc: "Invités réutilisables sur les battues",
   },
   {
     href: "plan",

@@ -1,76 +1,123 @@
 "use client";
 
-import { Pencil, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Plus, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { SignaturePad } from "@/components/signature-pad";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDelete } from "@/components/confirm-delete";
+import { Dialog } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { LocalInvite } from "./db";
+import { createInviteQuick } from "@/features/invites/actions";
+import type { LocalInviteParticipation } from "./db";
 import { SECURITY_NOTICE } from "./constants";
-import { useInvites } from "./hooks";
-import { removeInvite, upsertInvite } from "./sync";
-import type { SyncParticipant } from "./types";
+import { useInviteParticipations, useOnline } from "./hooks";
+import {
+  removeInviteParticipation,
+  upsertInviteParticipation,
+} from "./sync";
+import type { SyncInvitePerson } from "./types";
+
+/** Option de parrain : un chasseur ou un propriétaire. */
+export type ParrainOption = { value: string; label: string };
+
+const fullName = (p: { nom: string; prenom: string }) =>
+  `${p.nom.toUpperCase()} ${p.prenom}`;
 
 export function OfflineInvites({
   battueId,
-  participants,
+  cahierId,
+  invitePersons,
+  parrains,
 }: {
   battueId: string;
-  participants: SyncParticipant[];
+  cahierId: string;
+  invitePersons: SyncInvitePerson[];
+  parrains: ParrainOption[];
 }) {
-  const invites = useInvites(battueId) ?? [];
-  const [editing, setEditing] = useState<null | "new" | LocalInvite>(null);
+  const participations = useInviteParticipations(battueId) ?? [];
+  const [editing, setEditing] = useState<
+    null | "new" | LocalInviteParticipation
+  >(null);
+  const [creating, setCreating] = useState(false);
+
+  const personById = new Map(invitePersons.map((p) => [p.id, p]));
+  const usedIds = new Set(participations.map((p) => p.inviteId));
+
+  const sorted = [...participations].sort((a, b) => {
+    const pa = personById.get(a.inviteId);
+    const pb = personById.get(b.inviteId);
+    return `${pa?.nom ?? ""} ${pa?.prenom ?? ""}`.localeCompare(
+      `${pb?.nom ?? ""} ${pb?.prenom ?? ""}`,
+      "fr",
+      { sensitivity: "base" },
+    );
+  });
 
   return (
     <div className="flex flex-col gap-3">
       {editing ? (
-        <InviteEditor
+        <ParticipationEditor
           battueId={battueId}
-          participants={participants}
-          invite={editing === "new" ? undefined : editing}
+          invitePersons={invitePersons}
+          usedIds={usedIds}
+          participation={editing === "new" ? undefined : editing}
           onDone={() => setEditing(null)}
         />
       ) : (
         <>
-          <Button block variant="secondary" onClick={() => setEditing("new")}>
-            <UserPlus />
-            Ajouter un invité
-          </Button>
-          {invites.length === 0 ? (
+          <div className="flex flex-col gap-2">
+            {invitePersons.length > 0 ? (
+              <Button
+                block
+                variant="secondary"
+                onClick={() => setEditing("new")}
+              >
+                <UserPlus />
+                Ajouter un invité
+              </Button>
+            ) : null}
+            <Button
+              block
+              variant={invitePersons.length > 0 ? "ghost" : "secondary"}
+              onClick={() => setCreating(true)}
+            >
+              <Plus />
+              Ajouter un nouvel invité
+            </Button>
+          </div>
+          {participations.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Aucun invité pour cette battue.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {invites.map((i) => {
-                const parrain = participants.find(
-                  (p) => p.id === i.participantId,
-                );
+              {sorted.map((part) => {
+                const person = personById.get(part.inviteId);
                 return (
                   <li
-                    key={i.id}
+                    key={part.id}
                     className="flex items-center gap-3 rounded-[var(--radius)] border border-border bg-card p-3"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">
-                        {i.nom.toUpperCase()} {i.prenom}
+                        {person ? fullName(person) : "Invité"}
                       </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <Badge variant="muted">
-                          {i.role === "POSTE" ? "Posté" : "Traqueur"}
+                          {part.role === "POSTE" ? "Posté" : "Traqueur"}
                         </Badge>
-                        {parrain ? (
+                        {person?.parrainPrenom ? (
                           <span>
-                            Invité par {parrain.nom.toUpperCase()}{" "}
-                            {parrain.prenom}
+                            Invité par {person.parrainNom?.toUpperCase()}{" "}
+                            {person.parrainPrenom}
                           </span>
                         ) : null}
-                        {i.signature ? (
+                        {part.signature ? (
                           <Badge variant="success">Signé</Badge>
                         ) : null}
                       </div>
@@ -78,7 +125,7 @@ export function OfflineInvites({
                     <button
                       type="button"
                       aria-label="Modifier"
-                      onClick={() => setEditing(i)}
+                      onClick={() => setEditing(part)}
                       className="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
                     >
                       <Pencil className="size-5" />
@@ -90,55 +137,181 @@ export function OfflineInvites({
           )}
         </>
       )}
+
+      <NewInviteDialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        cahierId={cahierId}
+        parrains={parrains}
+      />
     </div>
   );
 }
 
-function InviteEditor({
+/** Dialog de création d'un nouvel invité (personne du cahier), en ligne. */
+function NewInviteDialog({
+  open,
+  onClose,
+  cahierId,
+  parrains,
+}: {
+  open: boolean;
+  onClose: () => void;
+  cahierId: string;
+  parrains: ParrainOption[];
+}) {
+  const router = useRouter();
+  const online = useOnline();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [nom, setNom] = useState("");
+  const [prenom, setPrenom] = useState("");
+  const [parrain, setParrain] = useState("");
+  const [numPermis, setNumPermis] = useState("");
+  const [numValidation, setNumValidation] = useState("");
+  const [numAssurance, setNumAssurance] = useState("");
+
+  function reset() {
+    setNom("");
+    setPrenom("");
+    setParrain("");
+    setNumPermis("");
+    setNumValidation("");
+    setNumAssurance("");
+    setError(null);
+  }
+
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    if (!nom.trim() || !prenom.trim()) {
+      setError("Nom et prénom obligatoires.");
+      return;
+    }
+    if (!parrain) {
+      setError("Choisissez un parrain.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await createInviteQuick({
+        cahierId,
+        parrain,
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+        numPermis: numPermis.trim(),
+        numValidation: numValidation.trim(),
+        numAssurance: numAssurance.trim(),
+      });
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      reset();
+      onClose();
+      // Rafraîchit l'instantané serveur pour rendre l'invité sélectionnable.
+      router.refresh();
+    });
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title="Nouvel invité"
+      description="Créez un invité réutilisable sur les battues."
+    >
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        {!online ? (
+          <p className="rounded-[var(--radius)] bg-muted p-2 text-sm text-muted-foreground">
+            Une connexion est nécessaire pour créer un invité.
+          </p>
+        ) : null}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Nom" required>
+            <Input value={nom} onChange={(e) => setNom(e.target.value)} />
+          </Field>
+          <Field label="Prénom" required>
+            <Input value={prenom} onChange={(e) => setPrenom(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Invité par" required>
+          <Select value={parrain} onChange={(e) => setParrain(e.target.value)}>
+            <option value="" disabled>
+              — Choisir un parrain —
+            </option>
+            {parrains.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="N° de permis">
+          <Input
+            value={numPermis}
+            onChange={(e) => setNumPermis(e.target.value)}
+          />
+        </Field>
+        <Field label="N° de validation annuelle">
+          <Input
+            value={numValidation}
+            onChange={(e) => setNumValidation(e.target.value)}
+          />
+        </Field>
+        <Field label="N° de contrat d'assurance">
+          <Input
+            value={numAssurance}
+            onChange={(e) => setNumAssurance(e.target.value)}
+          />
+        </Field>
+
+        {error ? (
+          <p className="text-sm font-medium text-destructive">{error}</p>
+        ) : null}
+        <Button type="submit" block disabled={pending || !online}>
+          {pending ? "Création…" : "Créer l'invité"}
+        </Button>
+      </form>
+    </Dialog>
+  );
+}
+
+function ParticipationEditor({
   battueId,
-  participants,
-  invite,
+  invitePersons,
+  usedIds,
+  participation,
   onDone,
 }: {
   battueId: string;
-  participants: SyncParticipant[];
-  invite?: LocalInvite;
+  invitePersons: SyncInvitePerson[];
+  usedIds: Set<string>;
+  participation?: LocalInviteParticipation;
   onDone: () => void;
 }) {
-  const [nom, setNom] = useState(invite?.nom ?? "");
-  const [prenom, setPrenom] = useState(invite?.prenom ?? "");
-  const [participantId, setParticipantId] = useState(
-    invite?.participantId ?? "",
+  const [inviteId, setInviteId] = useState(participation?.inviteId ?? "");
+  const [role, setRole] = useState<"POSTE" | "TRAQUEUR">(
+    participation?.role ?? "POSTE",
   );
-  const [numPermis, setNumPermis] = useState(invite?.numPermis ?? "");
-  const [numValidation, setNumValidation] = useState(
-    invite?.numValidation ?? "",
-  );
-  const [numAssurance, setNumAssurance] = useState(invite?.numAssurance ?? "");
-  const [role, setRole] = useState<"POSTE" | "TRAQUEUR">(invite?.role ?? "POSTE");
   const [signature, setSignature] = useState<string | null>(
-    invite?.signature ?? null,
+    participation?.signature ?? null,
   );
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Invités sélectionnables : ceux pas encore présents + l'invité en cours d'édition.
+  const options = invitePersons.filter(
+    (p) => !usedIds.has(p.id) || p.id === participation?.inviteId,
+  );
+
   function save() {
-    if (!prenom.trim() || !nom.trim()) {
-      setError("Nom et prénom obligatoires.");
+    if (!inviteId) {
+      setError("Choisissez un invité.");
       return;
     }
-    if (!participantId) {
-      setError("Rattachez l'invité à un membre.");
-      return;
-    }
-    upsertInvite(battueId, {
-      id: invite?.id,
-      participantId,
-      nom: nom.trim(),
-      prenom: prenom.trim(),
-      numPermis: numPermis.trim() || null,
-      numValidation: numValidation.trim() || null,
-      numAssurance: numAssurance.trim() || null,
+    upsertInviteParticipation(battueId, {
+      id: participation?.id,
+      inviteId,
       role,
       signature,
     });
@@ -147,44 +320,23 @@ function InviteEditor({
 
   return (
     <div className="flex flex-col gap-4 rounded-[var(--radius)] border border-border bg-card p-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Prénom" required>
-          <Input value={prenom} onChange={(e) => setPrenom(e.target.value)} />
-        </Field>
-        <Field label="Nom" required>
-          <Input value={nom} onChange={(e) => setNom(e.target.value)} />
-        </Field>
-      </div>
-      <Field label="Invité par (membre)" required>
+      <Field label="Invité" required>
         <Select
-          value={participantId}
-          onChange={(e) => setParticipantId(e.target.value)}
+          value={inviteId}
+          onChange={(e) => setInviteId(e.target.value)}
+          disabled={Boolean(participation)}
         >
           <option value="" disabled>
-            — Choisir un membre —
+            — Choisir un invité —
           </option>
-          {participants.map((p) => (
+          {options.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.nom.toUpperCase()} {p.prenom}
+              {fullName(p)}
             </option>
           ))}
         </Select>
       </Field>
-      <Field label="N° de permis">
-        <Input value={numPermis} onChange={(e) => setNumPermis(e.target.value)} />
-      </Field>
-      <Field label="N° de validation annuelle">
-        <Input
-          value={numValidation}
-          onChange={(e) => setNumValidation(e.target.value)}
-        />
-      </Field>
-      <Field label="N° de contrat d'assurance">
-        <Input
-          value={numAssurance}
-          onChange={(e) => setNumAssurance(e.target.value)}
-        />
-      </Field>
+
       <Field label="Poste">
         <div className="inline-flex overflow-hidden rounded-full border border-border">
           {(["POSTE", "TRAQUEUR"] as const).map((r) => (
@@ -204,17 +356,9 @@ function InviteEditor({
           ))}
         </div>
       </Field>
+
       <Field label="Signature de l'invité">
-        {signing ? (
-          <SignaturePad
-            onSave={(url) => {
-              setSignature(url);
-              setSigning(false);
-            }}
-            onCancel={() => setSigning(false)}
-            notice={SECURITY_NOTICE}
-          />
-        ) : signature ? (
+        {signature && !signing ? (
           <div className="flex items-center gap-3">
             <div className="flex h-20 flex-1 items-center justify-center rounded-[var(--radius)] border border-border bg-white p-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -224,14 +368,23 @@ function InviteEditor({
                 className="max-h-full max-w-full object-contain"
               />
             </div>
-            <Button type="button" variant="secondary" onClick={() => setSigning(true)}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setSigning(true)}
+            >
               Modifier
             </Button>
           </div>
         ) : (
-          <Button type="button" variant="secondary" onClick={() => setSigning(true)}>
-            Faire signer
-          </Button>
+          <SignaturePad
+            onSave={(url) => {
+              setSignature(url);
+              setSigning(false);
+            }}
+            onCancel={signature ? () => setSigning(false) : undefined}
+            notice={SECURITY_NOTICE}
+          />
         )}
       </Field>
 
@@ -240,19 +393,19 @@ function InviteEditor({
       ) : null}
       <div className="flex flex-col gap-2">
         <Button onClick={save} block>
-          {invite ? "Enregistrer" : "Ajouter l'invité"}
+          {participation ? "Enregistrer" : "Ajouter l'invité"}
         </Button>
         <div className="flex gap-2">
           <Button variant="ghost" block onClick={onDone}>
             Annuler
           </Button>
-          {invite ? (
+          {participation ? (
             <ConfirmDelete
               action={() => {
-                removeInvite(battueId, invite.id);
+                removeInviteParticipation(battueId, participation.id);
                 onDone();
               }}
-              label="Supprimer"
+              label="Retirer"
             />
           ) : null}
         </div>

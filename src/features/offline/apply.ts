@@ -4,7 +4,7 @@ import { db } from "@/db";
 import {
   battues,
   distributions,
-  invites,
+  inviteParticipations,
   participants,
   pointages,
   prelevements,
@@ -62,33 +62,23 @@ export async function applyPush(
       });
   }
 
-  // Invités : upsert par id.
-  for (const i of body.invites) {
+  // Participations d'invités : upsert par id.
+  for (const i of body.inviteParticipations) {
     if (i.battueId !== battueId) continue;
     await db
-      .insert(invites)
+      .insert(inviteParticipations)
       .values({
         id: i.id,
         battueId,
-        participantId: i.participantId,
-        nom: i.nom,
-        prenom: i.prenom,
-        numPermis: i.numPermis,
-        numValidation: i.numValidation,
-        numAssurance: i.numAssurance,
+        inviteId: i.inviteId,
         role: i.role,
         signature: i.signature,
         deletedAt: toDate(i.deletedAt),
       })
       .onConflictDoUpdate({
-        target: [invites.id],
+        target: [inviteParticipations.id],
         set: {
-          participantId: i.participantId,
-          nom: i.nom,
-          prenom: i.prenom,
-          numPermis: i.numPermis,
-          numValidation: i.numValidation,
-          numAssurance: i.numAssurance,
+          inviteId: i.inviteId,
           role: i.role,
           signature: i.signature,
           deletedAt: toDate(i.deletedAt),

@@ -15,15 +15,23 @@ export type SyncPointage = {
   deletedAt: string | null; // ISO
 };
 
-export type SyncInvite = {
+/** Invité (personne du cahier) — référence en lecture seule hors-ligne. */
+export type SyncInvitePerson = {
   id: string;
-  battueId: string;
-  participantId: string;
   nom: string;
   prenom: string;
   numPermis: string | null;
   numValidation: string | null;
   numAssurance: string | null;
+  parrainNom: string | null;
+  parrainPrenom: string | null;
+};
+
+/** Participation d'un invité à une battue (entité modifiable et synchronisée). */
+export type SyncInviteParticipation = {
+  id: string;
+  battueId: string;
+  inviteId: string;
   role: "POSTE" | "TRAQUEUR";
   signature: string | null;
   updatedAt: string;
@@ -111,8 +119,9 @@ export type BattueSnapshot = {
   presidentId: string | null;
   participants: SyncParticipant[];
   proprietaires: SyncProprietaire[];
+  invitePersons: SyncInvitePerson[];
   pointages: SyncPointage[];
-  invites: SyncInvite[];
+  inviteParticipations: SyncInviteParticipation[];
   prelevements: SyncPrelevement[];
   distributions: SyncDistribution[];
 };
@@ -125,7 +134,7 @@ export type SyncPushBody = {
     updatedAt: string;
   };
   pointages: SyncPointage[];
-  invites: SyncInvite[];
+  inviteParticipations: SyncInviteParticipation[];
   prelevements: SyncPrelevement[];
   /** Fiches participant corrigées localement (permis, assurance, téléphone…). */
   participants?: SyncParticipant[];

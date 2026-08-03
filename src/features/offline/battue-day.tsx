@@ -49,6 +49,17 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
 
   const { participants, presidentId, battue, cahier } = snapshot;
   const chasseurs = participants.filter((p) => p.estChasseur);
+  // Parrains possibles d'un invité : chasseurs + propriétaires.
+  const parrains = [
+    ...chasseurs.map((c) => ({
+      value: `PARTICIPANT:${c.id}`,
+      label: `${c.nom.toUpperCase()} ${c.prenom}`,
+    })),
+    ...snapshot.proprietaires.map((p) => ({
+      value: `PROPRIETAIRE:${p.id}`,
+      label: `${p.nom.toUpperCase()} ${p.prenom} (propriétaire)`,
+    })),
+  ];
   const president = participants.find((p) => p.id === presidentId);
   const responsable = participants.find((p) => p.id === battue.responsableId);
   const responsableNom = responsable
@@ -119,7 +130,12 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
           <CardTitle>Invités</CardTitle>
         </CardHeader>
         <CardContent>
-          <OfflineInvites battueId={battueId} participants={participants} />
+          <OfflineInvites
+            battueId={battueId}
+            cahierId={cahier.id}
+            invitePersons={snapshot.invitePersons}
+            parrains={parrains}
+          />
         </CardContent>
       </Card>
 
@@ -132,6 +148,7 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
             battueId={battueId}
             especes={especes}
             chasseurs={chasseurs}
+            invitePersons={snapshot.invitePersons}
           />
         </CardContent>
       </Card>
@@ -149,6 +166,7 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
             battueId={battueId}
             participants={chasseurs}
             proprietaires={snapshot.proprietaires}
+            invitePersons={snapshot.invitePersons}
             morceaux={cahier.morceaux}
           />
         </CardContent>

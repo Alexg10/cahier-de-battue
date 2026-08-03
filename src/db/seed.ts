@@ -5,6 +5,7 @@ import {
   battues,
   bureauMembres,
   cahiers,
+  inviteParticipations,
   invites,
   participants,
   pointages,
@@ -118,16 +119,21 @@ async function main() {
   const [invite] = await db
     .insert(invites)
     .values({
-      battueId: battue.id,
-      participantId: insertedParticipants[0].id,
+      cahierId: cahier.id,
+      parrainType: "PARTICIPANT",
+      parrainId: insertedParticipants[0].id,
       nom: "Durand",
       prenom: "Michel",
       numPermis: "PERMIS-9988",
       numValidation: "VAL-INV-01",
       numAssurance: "ASS-INV-01",
-      role: "POSTE",
     })
     .returning({ id: invites.id });
+  await db.insert(inviteParticipations).values({
+    battueId: battue.id,
+    inviteId: invite.id,
+    role: "POSTE",
+  });
 
   await db.insert(prelevements).values([
     {

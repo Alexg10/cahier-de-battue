@@ -5,7 +5,8 @@ import type {
   SyncBattueMeta,
   SyncCahierMeta,
   SyncDistribution,
-  SyncInvite,
+  SyncInviteParticipation,
+  SyncInvitePerson,
   SyncParticipant,
   SyncPointage,
   SyncPrelevement,
@@ -19,6 +20,8 @@ export type LocalMeta = {
   presidentId: string | null;
   participants: SyncParticipant[];
   proprietaires: SyncProprietaire[];
+  /** Invités (personnes) du cahier, en lecture seule pour la sélection. */
+  invitePersons: SyncInvitePerson[];
   pulledAt: string | null;
 };
 
@@ -27,7 +30,9 @@ export type LocalPointage = SyncPointage & {
   key: string;
   dirty: 0 | 1;
 };
-export type LocalInvite = SyncInvite & { dirty: 0 | 1 };
+export type LocalInviteParticipation = SyncInviteParticipation & {
+  dirty: 0 | 1;
+};
 export type LocalPrelevement = SyncPrelevement & { dirty: 0 | 1 };
 export type LocalParticipant = SyncParticipant & {
   /** Clé locale unique par battue : `${battueId}:${id}`. */
@@ -47,11 +52,11 @@ export type LocalDelegation = {
 class BattueDB extends Dexie {
   meta!: Table<LocalMeta, string>;
   pointages!: Table<LocalPointage, string>;
-  invites!: Table<LocalInvite, string>;
   prelevements!: Table<LocalPrelevement, string>;
   delegation!: Table<LocalDelegation, string>;
   participants!: Table<LocalParticipant, string>;
   distributions!: Table<LocalDistribution, string>;
+  inviteParticipations!: Table<LocalInviteParticipation, string>;
 
   constructor() {
     super("cahier-battue");
@@ -69,6 +74,13 @@ class BattueDB extends Dexie {
     // v3 : distributions de gibier.
     this.version(3).stores({
       distributions: "id, battueId, dirty",
+    });
+    // v4 : les invités deviennent des personnes du cahier ; on ne synchronise
+    // plus que leur participation par battue (l'ancienne table `invites` est
+    // abandonnée).
+    this.version(4).stores({
+      invites: null,
+      inviteParticipations: "id, battueId, dirty",
     });
   }
 }

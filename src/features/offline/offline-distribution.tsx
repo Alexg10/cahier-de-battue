@@ -7,12 +7,16 @@ import { cn } from "@/lib/utils";
 import { GIGOT_TIREUR_CODE, type Morceau } from "@/features/cahiers/constants";
 import {
   useDistributions,
-  useInvites,
+  useInviteParticipations,
   usePointages,
   usePrelevements,
 } from "./hooks";
 import { addDistribution, removeDistribution } from "./sync";
-import type { SyncParticipant, SyncProprietaire } from "./types";
+import type {
+  SyncInvitePerson,
+  SyncParticipant,
+  SyncProprietaire,
+} from "./types";
 
 type RecipientType = "PARTICIPANT" | "PROPRIETAIRE" | "INVITE";
 
@@ -29,17 +33,24 @@ export function OfflineDistribution({
   battueId,
   participants,
   proprietaires,
+  invitePersons,
   morceaux,
 }: {
   battueId: string;
   participants: SyncParticipant[];
   proprietaires: SyncProprietaire[];
+  invitePersons: SyncInvitePerson[];
   morceaux: Morceau[];
 }) {
   const pointages = usePointages(battueId) ?? [];
-  const invites = useInvites(battueId) ?? [];
+  const participations = useInviteParticipations(battueId) ?? [];
   const prelevements = usePrelevements(battueId) ?? [];
   const distributions = useDistributions(battueId) ?? [];
+  // Invités présents ce jour (participations → personnes) = bénéficiaires.
+  const invitePersonById = new Map(invitePersons.map((p) => [p.id, p]));
+  const invitesPresents = participations
+    .map((part) => invitePersonById.get(part.inviteId))
+    .filter((p): p is SyncInvitePerson => Boolean(p));
 
   const codeLabel = (code: string) =>
     morceaux.find((m) => m.code === code)?.label ?? code;
@@ -82,7 +93,7 @@ export function OfflineDistribution({
           nom: p.nom,
           prenom: p.prenom,
         })),
-      ...invites.map((i) => ({
+      ...invitesPresents.map((i) => ({
         type: "INVITE" as const,
         id: i.id,
         nom: i.nom,
