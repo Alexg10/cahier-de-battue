@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   FileSpreadsheet,
+  Phone,
   Printer,
   UserPlus,
 } from "lucide-react";
@@ -98,10 +99,21 @@ export default async function ProprietairesPage({
                           <Badge variant="muted">Chasseur</Badge>
                         ) : null}
                         {p.telephone ? (
-                          <span className="text-sm text-muted-foreground">
+                          <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                            <Phone className="size-3.5" />
                             {p.telephone}
                           </span>
                         ) : null}
+                        {(() => {
+                          const n =
+                            (filleulsByProp[p.id]?.invites.length ?? 0) +
+                            (filleulsByProp[p.id]?.participants.length ?? 0);
+                          return n > 0 ? (
+                            <Badge variant="primary">
+                              {n} invité{n > 1 ? "s" : ""}
+                            </Badge>
+                          ) : null;
+                        })()}
                       </div>
                       {p.referentNom ? (
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -109,26 +121,6 @@ export default async function ProprietairesPage({
                             Référent :
                           </span>{" "}
                           {p.referentNom.toUpperCase()} {p.referentPrenom}
-                        </p>
-                      ) : null}
-                      {(filleulsByProp[p.id]?.invites ?? []).length > 0 ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            Invités :
-                          </span>{" "}
-                          {(filleulsByProp[p.id]?.invites ?? [])
-                            .map((i) => `${i.nom.toUpperCase()} ${i.prenom}`)
-                            .join(" · ")}
-                        </p>
-                      ) : null}
-                      {(filleulsByProp[p.id]?.participants ?? []).length > 0 ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            Personnes invitées :
-                          </span>{" "}
-                          {(filleulsByProp[p.id]?.participants ?? [])
-                            .map((i) => `${i.nom.toUpperCase()} ${i.prenom}`)
-                            .join(" · ")}
                         </p>
                       ) : null}
                     </div>

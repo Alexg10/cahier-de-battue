@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { Container } from "@/components/container";
 import { PageHeader } from "@/components/page-header";
 import { requireCahier } from "@/features/cahiers/guard";
+import { listFilleulsByProprietaire } from "@/features/invites/queries";
 import { listParticipants } from "@/features/participants/queries";
 import { deleteProprietaire } from "@/features/proprietaires/actions";
 import { ProprietaireForm } from "@/features/proprietaires/proprietaire-form";
@@ -37,6 +43,10 @@ export default async function EditProprietairePage({
     prenom: p.prenom,
   }));
 
+  const filleuls = (await listFilleulsByProprietaire(cahierId))[proprietaireId];
+  const invites = filleuls?.invites ?? [];
+  const personnesInvitees = filleuls?.participants ?? [];
+
   return (
     <>
       <PageHeader
@@ -54,6 +64,44 @@ export default async function EditProprietairePage({
             />
           </CardContent>
         </Card>
+
+        {invites.length > 0 || personnesInvitees.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Personnes invitées</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {invites.length > 0 ? (
+                <div>
+                  <p className="mb-1 text-sm font-semibold">
+                    Invités ({invites.length})
+                  </p>
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {invites.map((i) => (
+                      <li key={i.id}>
+                        {i.nom.toUpperCase()} {i.prenom}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {personnesInvitees.length > 0 ? (
+                <div>
+                  <p className="mb-1 text-sm font-semibold">
+                    Participants ({personnesInvitees.length})
+                  </p>
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {personnesInvitees.map((i) => (
+                      <li key={i.id}>
+                        {i.nom.toUpperCase()} {i.prenom}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        ) : null}
 
         <ConfirmDelete
           action={deleteProprietaire}
