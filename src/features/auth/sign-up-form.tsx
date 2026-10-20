@@ -7,7 +7,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signUpAction, type AuthState } from "./actions";
 
-export function SignUpForm() {
+export function SignUpForm({ defaultEmail }: { defaultEmail?: string }) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     signUpAction,
     undefined,
@@ -27,6 +27,7 @@ export function SignUpForm() {
           inputMode="email"
           required
           placeholder="vous@exemple.fr"
+          defaultValue={defaultEmail}
         />
       </Field>
       <Field label="Mot de passe" htmlFor="password" hint="8 caractères minimum.">

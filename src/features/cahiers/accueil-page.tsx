@@ -12,7 +12,8 @@ import {
 import { listAllBattues, listCahiers } from "@/features/cahiers/queries";
 import { requireUser } from "@/lib/session";
 
-export default async function AccueilPage() {
+/** Accueil connecté : liste des cahiers (rendue sur « / » si une session existe). */
+export async function AccueilPage() {
   const user = await requireUser();
   const [cahiers, battues] = await Promise.all([
     listCahiers(user.id),

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Déclaré explicitement pour que les classes de la vitrine soient toujours générées. */
+@source "../features/vitrine";
+
 /*
  * Thème « cahier de battue » — mobile-first, lisible en extérieur.
  * Mode clair uniquement (contraste élevé au soleil, simplicité pour novices).
@@ -31,12 +34,32 @@
   --color-success: #15803d;
   --color-warning: #b45309;
 
+  /* Site vitrine (page d'accueil publique) */
+  --color-blaze: #f07a2b;
+  --color-blaze-hover: #e46a1a;
+  --color-forest: #16301c;
+  --color-forest-soft: #c9d6c5;
+  --color-primary-soft: #dce8d8;
+  --color-ink-soft: #44443c;
+  --color-ink-muted: #55554b;
+
   --radius: 0.75rem;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Polices de la vitrine, chargées via next/font sur la page d'accueil. */
+@theme inline {
+  --font-display: var(--font-barlow-condensed), system-ui, sans-serif;
+  --font-vitrine: var(--font-barlow), system-ui, sans-serif;
+}
+
 html {
   color-scheme: light;
+}
+
+/* Défilement doux vers les ancres, uniquement sur la vitrine. */
+html:has(.vitrine) {
+  scroll-behavior: smooth;
 }
 
 body {

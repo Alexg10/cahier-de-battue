@@ -6,14 +6,21 @@ import { SignUpForm } from "@/features/auth/sign-up-form";
 
 export const metadata: Metadata = { title: "Créer un compte" };
 
-export default async function InscriptionPage() {
+export default async function InscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string | string[] }>;
+}) {
   const session = await auth();
   if (session?.user?.id) redirect("/");
+  // E-mail saisi sur la vitrine (formulaire GET vers /inscription).
+  const { email } = await searchParams;
+  const defaultEmail = typeof email === "string" ? email : undefined;
 
   return (
     <Card>
       <CardContent className="pt-6">
-        <SignUpForm />
+        <SignUpForm defaultEmail={defaultEmail} />
       </CardContent>
     </Card>
   );
