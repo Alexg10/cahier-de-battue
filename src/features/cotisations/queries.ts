@@ -3,7 +3,14 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { battues, cahiers, participants, pointages } from "@/db/schema";
 
-export type CotisationCell = { participe: boolean; montant: number };
+export type CotisationCell = {
+  participe: boolean;
+  montant: number;
+  /** Cotisation « chasse » versée. */
+  chasse: boolean;
+  /** Cotisation « chiens » versée. */
+  chiens: boolean;
+};
 
 export type CotisationsMatrix = {
   saison: string;
@@ -91,7 +98,12 @@ export async function saisonCotisationsMatrix(
       (pt.cotisationChiens ? montantChiens : 0);
     const participe = pt.cotisationChasse || pt.cotisationChiens;
     if (!parPart.has(pt.participantId)) parPart.set(pt.participantId, new Map());
-    parPart.get(pt.participantId)!.set(pt.battueId, { participe, montant });
+    parPart.get(pt.participantId)!.set(pt.battueId, {
+      participe,
+      montant,
+      chasse: pt.cotisationChasse,
+      chiens: pt.cotisationChiens,
+    });
   }
 
   const totalParBattue: Record<string, number> = {};
@@ -102,7 +114,12 @@ export async function saisonCotisationsMatrix(
     const cells: Record<string, CotisationCell> = {};
     let total = 0;
     for (const b of battueRows) {
-      const cell = src?.get(b.id) ?? { participe: false, montant: 0 };
+      const cell = src?.get(b.id) ?? {
+        participe: false,
+        montant: 0,
+        chasse: false,
+        chiens: false,
+      };
       cells[b.id] = cell;
       total += cell.montant;
       totalParBattue[b.id] += cell.montant;

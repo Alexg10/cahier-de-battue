@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { Crosshair, Dog, FileSpreadsheet, Printer } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,12 @@ export default async function CotisationsPage({
 
   return (
     <>
-      <PageHeader title="Cotisations" backHref={`/cahiers/${cahierId}`} />
-      <Container className="flex flex-col gap-4">
+      <PageHeader
+        title="Cotisations"
+        backHref={`/cahiers/${cahierId}`}
+        className="max-w-6xl"
+      />
+      <Container className="flex max-w-6xl flex-col gap-4">
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="secondary"
@@ -52,12 +56,14 @@ export default async function CotisationsPage({
           </p>
         </div>
 
-        <Card className="overflow-x-auto p-3">
+        <Card className="overflow-x-auto px-0 py-2">
           <CotisationsTable data={data} />
         </Card>
 
-        <p className="text-xs text-muted-foreground">
-          ✓ ou montant = a versé · X = n&apos;a pas participé.
+        <p className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
+          ✓ ou montant = a versé ·
+          <Crosshair className="size-3.5" /> chasse ·
+          <Dog className="size-3.5" /> chiens · X = non versé.
         </p>
       </Container>
     </>

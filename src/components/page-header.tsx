@@ -1,6 +1,7 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 /** Barre de titre collante, mobile-first, avec bouton retour optionnel. */
 export function PageHeader({
@@ -8,15 +9,23 @@ export function PageHeader({
   subtitle,
   backHref,
   action,
+  className,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   backHref?: string;
   action?: React.ReactNode;
+  /** Classes du conteneur interne (ex. pour élargir au-delà de `max-w-2xl`). */
+  className?: string;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
+      <div
+        className={cn(
+          "mx-auto flex max-w-2xl items-center gap-2 px-4 py-3",
+          className,
+        )}
+      >
         {backHref ? (
           <Link
             href={backHref}

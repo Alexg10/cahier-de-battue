@@ -1,4 +1,4 @@
-import { FileSpreadsheet } from "lucide-react";
+import { Crosshair, Dog, FileSpreadsheet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -50,10 +50,11 @@ export default async function CotisationsImpressionPage({
           {cahier.territoire ? ` — ${cahier.territoire}` : ""} · Saison{" "}
           {cahier.saison} · Total récolté {formatEuro(data.totalGeneral)}
         </p>
-        <p className="text-xs text-gray-600">
+        <p className="flex flex-wrap items-center gap-x-1 text-xs text-gray-600">
           Chasse {formatEuro(data.montantChasse)} · Chiens{" "}
-          {formatEuro(data.montantChiens)} par battue · ✓ ou montant = a versé ·
-          X = n&apos;a pas participé.
+          {formatEuro(data.montantChiens)} par battue · ✓ ou montant = a versé
+          · <Crosshair className="size-3" /> chasse ·{" "}
+          <Dog className="size-3" /> chiens · X = non versé.
         </p>
       </header>
 
