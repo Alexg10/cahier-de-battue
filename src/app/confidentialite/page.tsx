@@ -101,12 +101,20 @@ export default function ConfidentialitePage() {
           </P>
         </Section>
 
-        <Section titre="Cookies">
+        <Section titre="Cookies et mesure d'audience">
           <P>
             {SITE_NAME} n&apos;utilise qu&apos;un cookie strictement nécessaire
             : celui qui maintient votre session de connexion. Aucun cookie
-            publicitaire ni outil de mesure d&apos;audience n&apos;est utilisé ;
-            aucun consentement n&apos;est donc demandé.
+            publicitaire n&apos;est utilisé.
+          </P>
+          <P>
+            Pour savoir quelles pages sont consultées, le site utilise Vercel
+            Web Analytics, un outil de mesure d&apos;audience sans cookie : il
+            enregistre de façon anonyme et agrégée la page vue, le site de
+            provenance, le pays, le type d&apos;appareil et le navigateur. Les
+            visiteurs ne sont pas identifiés ni suivis d&apos;un site à
+            l&apos;autre, et aucune donnée saisie dans les cahiers n&apos;est
+            transmise. Aucun consentement n&apos;est donc demandé.
           </P>
         </Section>
 

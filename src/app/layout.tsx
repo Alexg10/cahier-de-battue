@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         {children}
         <ServiceWorkerRegister />
+        <Analytics />
       </body>
     </html>
   );
