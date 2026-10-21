@@ -75,11 +75,14 @@ export default function ConfidentialitePage() {
             {LEGAL.hebergeurDonnees.region}.
           </P>
           <P>
-            Le site est servi par {LEGAL.hebergeur.nom}, société établie aux
-            États-Unis : les échanges entre votre appareil et la base de données
-            transitent par son infrastructure. Ce transfert est encadré par les
-            garanties prévues par le RGPD (Data Privacy Framework UE–États-Unis
-            et clauses contractuelles types de la Commission européenne).
+            Le serveur de l&apos;application est exécuté par{" "}
+            {LEGAL.hebergeur.nom} dans l&apos;Union européenne, région{" "}
+            {LEGAL.hebergeur.region} : vos données sont traitées et stockées en
+            Europe. {LEGAL.hebergeur.nom} étant une société établie aux
+            États-Unis, tout accès éventuel depuis l&apos;extérieur de
+            l&apos;Union reste encadré par les garanties prévues par le RGPD
+            (Data Privacy Framework UE–États-Unis et clauses contractuelles
+            types de la Commission européenne).
           </P>
           <P>
             Pour fonctionner sans réseau, les données de la battue ouverte sont

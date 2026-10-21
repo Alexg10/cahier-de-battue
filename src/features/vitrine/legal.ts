@@ -13,6 +13,8 @@ export const LEGAL = {
     nom: "Vercel Inc.",
     adresse: "440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
     site: "https://vercel.com",
+    /** Région d'exécution du serveur (réglage Vercel « Function Region »). */
+    region: "Paris, France (cdg1)",
   },
   /** Bureau d'enregistrement du nom de domaine. */
   registrar: {

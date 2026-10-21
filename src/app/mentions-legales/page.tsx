@@ -45,7 +45,9 @@ export default function MentionsLegalesPage() {
         <Section titre="Hébergement">
           <P>
             Le site est hébergé par {LEGAL.hebergeur.nom},{" "}
-            {LEGAL.hebergeur.adresse} ({LEGAL.hebergeur.site}).
+            {LEGAL.hebergeur.adresse} ({LEGAL.hebergeur.site}). Le serveur de
+            l&apos;application est exécuté dans la région{" "}
+            {LEGAL.hebergeur.region}.
           </P>
           <P>
             Les données des cahiers sont stockées par{" "}
