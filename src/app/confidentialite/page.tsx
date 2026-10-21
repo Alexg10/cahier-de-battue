@@ -33,9 +33,8 @@ export default function ConfidentialitePage() {
         <Section titre="Qui est responsable de vos données ?">
           <P>
             Pour les comptes utilisateurs (e-mail, nom, mot de passe), le
-            responsable de traitement est l&apos;éditeur du site :{" "}
-            {LEGAL.editeur}, {LEGAL.adresse} (voir les{" "}
-            <A href="/mentions-legales">mentions légales</A>).
+            responsable de traitement est l&apos;éditeur du site, joignable à{" "}
+            {mail} (voir les <A href="/mentions-legales">mentions légales</A>).
           </P>
           <P>
             Pour les données saisies dans un cahier (chasseurs, invités,
@@ -71,12 +70,16 @@ export default function ConfidentialitePage() {
 
         <Section titre="Où sont-elles hébergées ?">
           <P>
-            Le site est hébergé par {LEGAL.hebergeur.nom}. Les données des
-            cahiers sont stockées par {LEGAL.hebergeurDonnees.nom}, région{" "}
+            Les données des cahiers sont stockées dans l&apos;Union européenne
+            par {LEGAL.hebergeurDonnees.nom}, région{" "}
             {LEGAL.hebergeurDonnees.region}.
-            {LEGAL.hebergeurDonnees.horsUE
-              ? " Ce stockage hors de l'Union européenne est encadré par les garanties prévues par le RGPD (clauses contractuelles types de la Commission européenne)."
-              : ""}
+          </P>
+          <P>
+            Le site est servi par {LEGAL.hebergeur.nom}, société établie aux
+            États-Unis : les échanges entre votre appareil et la base de données
+            transitent par son infrastructure. Ce transfert est encadré par les
+            garanties prévues par le RGPD (Data Privacy Framework UE–États-Unis
+            et clauses contractuelles types de la Commission européenne).
           </P>
           <P>
             Pour fonctionner sans réseau, les données de la battue ouverte sont

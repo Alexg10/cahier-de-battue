@@ -24,8 +24,11 @@ export default function MentionsLegalesPage() {
         <Section titre="Éditeur du site">
           <P>
             Le site {SITE_URL.replace(/^https?:\/\//, "")} et l&apos;application{" "}
-            {SITE_NAME} sont édités par {LEGAL.editeur}, {LEGAL.editeurStatut},{" "}
-            {LEGAL.adresse}.
+            {SITE_NAME} sont édités à titre non professionnel par{" "}
+            {LEGAL.editeur}. Conformément à l&apos;article 6-III-2 de la loi
+            pour la confiance dans l&apos;économie numérique (LCEN), son
+            identité et ses coordonnées ont été communiquées à l&apos;hébergeur
+            du site.
           </P>
           <P>
             Contact :{" "}
@@ -35,7 +38,7 @@ export default function MentionsLegalesPage() {
             >
               {LEGAL.email}
             </a>
-            . Directeur de la publication : {LEGAL.directeurPublication}.
+            .
           </P>
         </Section>
 
@@ -48,6 +51,10 @@ export default function MentionsLegalesPage() {
             Les données des cahiers sont stockées par{" "}
             {LEGAL.hebergeurDonnees.nom} ({LEGAL.hebergeurDonnees.site}), région{" "}
             {LEGAL.hebergeurDonnees.region}.
+          </P>
+          <P>
+            Le nom de domaine est enregistré auprès de {LEGAL.registrar.nom},{" "}
+            {LEGAL.registrar.adresse} ({LEGAL.registrar.site}).
           </P>
         </Section>
 
