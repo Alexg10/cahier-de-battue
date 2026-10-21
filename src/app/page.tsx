@@ -2,14 +2,19 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { AccueilPage } from "@/features/cahiers/accueil-page";
 import { LandingPage } from "@/features/vitrine/landing-page";
+import { SITE_DESCRIPTION } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const session = await auth();
-  if (session?.user?.id) return {};
+  if (session?.user?.id) return { robots: { index: false, follow: false } };
+  const title = "Cahier de battue numérique gratuit | Carnet de chasse en ligne";
+  const description = SITE_DESCRIPTION;
   return {
-    title: { absolute: "Cahier de battue — le carnet de battue numérique et gratuit" },
-    description:
-      "Participants, pointage signé, tableau de chasse, partage du gibier et cotisations : le cahier de battue de votre société sur téléphone, même sans réseau. Gratuit.",
+    title: { absolute: title },
+    description,
+    alternates: { canonical: "/" },
+    openGraph: { title, description, url: "/" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 

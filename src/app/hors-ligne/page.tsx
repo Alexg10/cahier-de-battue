@@ -1,6 +1,9 @@
 import { WifiOff } from "lucide-react";
 
-export const metadata = { title: "Hors ligne" };
+export const metadata = {
+  title: "Hors ligne",
+  robots: { index: false, follow: false },
+};
 
 export default function HorsLignePage() {
   return (
@@ -10,7 +13,7 @@ export default function HorsLignePage() {
       </span>
       <h1 className="text-xl font-bold">Vous êtes hors ligne</h1>
       <p className="max-w-xs text-sm text-muted-foreground">
-        Cette page n'a pas encore été chargée. Les pages déjà consultées restent
+        Cette page n&apos;a pas encore été chargée. Les pages déjà consultées restent
         accessibles sans réseau. Reconnectez-vous pour charger de nouvelles
         données.
       </p>

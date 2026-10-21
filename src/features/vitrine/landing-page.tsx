@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   Split,
   Tag,
-  TreePine,
   UserPlus,
   Users,
   Wallet,
@@ -15,20 +14,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
-import { barlow, barlowCondensed } from "./fonts";
+import { GUIDES } from "./guides";
 import { PhoneMockup } from "./phone-mockup";
+import { container, ctaBlaze, Eyebrow, VitrineShell } from "./site-chrome";
 
 /* ------------------------------------------------------------------ */
 /* Contenu                                                             */
 /* ------------------------------------------------------------------ */
-
-const NAV = [
-  { href: "#fonctionnalites", label: "Fonctionnalités" },
-  { href: "#jour-j", label: "Le jour J" },
-  { href: "#hors-ligne", label: "Hors réseau" },
-  { href: "#faq", label: "FAQ" },
-];
 
 const ARGUMENTS_HERO = [
   "Gratuit, sans carte bancaire",
@@ -153,6 +147,18 @@ const ROLES = [
 
 const FAQ = [
   {
+    q: "Qu'est-ce qu'un cahier de battue ?",
+    r: "Le cahier (ou carnet) de battue est le registre tenu à chaque battue au grand gibier : date, lieu, consignes de sécurité, liste signée des participants et animaux prélevés. Cahier de battue en est la version numérique.",
+  },
+  {
+    q: "Le carnet de battue est-il obligatoire ?",
+    r: "Dans de nombreux départements, le schéma départemental de gestion cynégétique (SDGC) impose un carnet de battue pour la chasse collective au grand gibier. Les règles varient : renseignez-vous auprès de votre fédération départementale des chasseurs.",
+  },
+  {
+    q: "Est-ce adapté à une ACCA ou à une petite chasse privée ?",
+    r: "Oui. De quelques chasseurs à plus de 100 participants, les mêmes fonctionnalités sont disponibles, gratuitement.",
+  },
+  {
     q: "Faut-il installer une application ?",
     r: "Non. Cahier de battue s'ouvre dans le navigateur du téléphone et peut s'ajouter à l'écran d'accueil pour s'utiliser comme une appli.",
   },
@@ -174,37 +180,46 @@ const FAQ = [
   },
 ];
 
+/**
+ * Données structurées (schema.org) : le logiciel, gratuit, et sa FAQ. Aident
+ * Google à comprendre le produit et peuvent enrichir l'affichage du résultat.
+ */
+const JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    inLanguage: "fr-FR",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, Android, iOS",
+    inLanguage: "fr-FR",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.r },
+    })),
+  },
+];
+
 /* ------------------------------------------------------------------ */
 /* Petits éléments réutilisés                                          */
 /* ------------------------------------------------------------------ */
 
-const container = "mx-auto w-full max-w-[1200px] px-6";
 const h2 =
   "font-display text-[clamp(36px,4vw,56px)] leading-none font-extrabold uppercase";
-const ctaBlaze =
-  "inline-flex items-center gap-2.5 rounded-xl bg-blaze font-bold text-foreground transition-colors hover:bg-blaze-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
-
-function Eyebrow({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <p className={cn("mb-3 text-sm font-bold tracking-[0.12em] text-primary uppercase", className)}>
-      {children}
-    </p>
-  );
-}
-
-function Logo({ small = false }: { small?: boolean }) {
-  return (
-    <span
-      className={cn(
-        "flex items-center justify-center bg-primary text-primary-foreground",
-        small ? "size-[30px] rounded-lg" : "size-[38px] rounded-[10px]",
-      )}
-    >
-      <TreePine className={small ? "size-[18px]" : "size-[22px]"} aria-hidden="true" />
-    </span>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
@@ -212,37 +227,14 @@ function Logo({ small = false }: { small?: boolean }) {
 /** Site vitrine affiché sur « / » aux visiteurs non connectés. */
 export function LandingPage() {
   return (
-    <div
-      className={cn(
-        barlow.variable,
-        barlowCondensed.variable,
-        "vitrine flex-1 bg-background font-vitrine text-[17px] leading-[1.55] text-foreground",
-      )}
-    >
-      {/* ============ NAV ============ */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur-md">
-        <nav className={cn(container, "flex flex-wrap items-center justify-between gap-6 py-3.5")}>
-          <Link href="/" className="flex items-center gap-2.5">
-            <Logo />
-            <span className="font-display text-2xl font-bold">Cahier de battue</span>
-          </Link>
-          <div className="hidden items-center gap-7 text-base font-medium md:flex">
-            {NAV.map((n) => (
-              <a key={n.href} href={n.href} className="hover:text-primary">
-                {n.label}
-              </a>
-            ))}
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Link href="/connexion" className="inline-flex min-h-11 items-center px-3.5 font-semibold hover:text-primary">
-              Se connecter
-            </Link>
-            <Link href="/inscription" className={cn(ctaBlaze, "min-h-11 rounded-[10px] px-[18px]")}>
-              Créer mon cahier
-            </Link>
-          </div>
-        </nav>
-      </header>
+    <VitrineShell>
+      <script
+        type="application/ld+json"
+        // Contenu statique construit ci-dessus (pas de saisie utilisateur).
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+        }}
+      />
 
       <main>
         {/* ============ HERO ============ */}
@@ -250,17 +242,17 @@ export function LandingPage() {
           <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-7">
             <div className="inline-flex items-center gap-2.5 self-start rounded-full bg-accent py-1.5 pr-3.5 pl-3 text-sm font-semibold text-accent-foreground">
               <span className="size-2.5 rounded-full bg-blaze" aria-hidden="true" />
-              100 % gratuit · pensé pour les sociétés de chasse
+              100 % gratuit · pour sociétés de chasse, ACCA et chasses privées
             </div>
             <h1 className="font-display text-[clamp(48px,6.4vw,84px)] leading-[0.96] font-extrabold tracking-[-0.01em] uppercase">
-              Le cahier de battue,
+              Le cahier de battue numérique,
               <br />
               <span className="text-primary">enfin dans la poche.</span>
             </h1>
             <p className="max-w-[560px] text-xl leading-normal text-ink-soft">
               Participants, pointage signé au doigt, tableau de chasse, partage du gibier et
-              cotisations&nbsp;: tout votre carnet papier dans une appli qui fonctionne même sans
-              réseau, au fond des bois.
+              cotisations&nbsp;: votre carnet de battue papier devient une appli de chasse qui
+              fonctionne même sans réseau, au fond des bois.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/inscription" className={cn(ctaBlaze, "min-h-14 px-[26px] text-lg")}>
@@ -292,7 +284,7 @@ export function LandingPage() {
             <div className="min-w-0 flex-[1_1_360px]">
               <Eyebrow>Pourquoi passer au numérique</Eyebrow>
               <h2 className="font-display text-[clamp(36px,4vw,52px)] leading-none font-extrabold uppercase">
-                Le carnet papier a fait son temps.
+                Le carnet de battue papier a fait son temps.
               </h2>
             </div>
             <div className="grid min-w-0 flex-[2_1_560px] grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
@@ -322,7 +314,7 @@ export function LandingPage() {
         <section id="fonctionnalites" className={cn(container, "scroll-mt-20 py-24")}>
           <div className="mb-12 max-w-[720px]">
             <Eyebrow>Fonctionnalités</Eyebrow>
-            <h2 className={cn(h2, "mb-4")}>Tout le cahier. Rien que le cahier.</h2>
+            <h2 className={cn(h2, "mb-4")}>Tout le cahier de battue. Rien que le cahier.</h2>
             <p className="text-[19px] text-ink-soft">
               Chaque page de votre carnet de battue a son écran, pensé pour être utilisé debout,
               gants à la main, en plein soleil.
@@ -347,7 +339,7 @@ export function LandingPage() {
             <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
               <div className="max-w-[640px]">
                 <Eyebrow>Une journée type</Eyebrow>
-                <h2 className={h2}>Du rond de rendez-vous au partage.</h2>
+                <h2 className={h2}>Une battue, du rond de rendez-vous au partage du gibier.</h2>
               </div>
               <p className="max-w-[420px] text-ink-muted">
                 Le responsable de battue suit la journée dans l&apos;ordre, sur un seul écran.
@@ -373,7 +365,7 @@ export function LandingPage() {
             <div className="flex min-w-0 flex-[1_1_480px] flex-col gap-[22px]">
               <p className="text-sm font-bold tracking-[0.12em] text-blaze uppercase">Hors réseau</p>
               <h2 className="font-display text-[clamp(38px,4.4vw,60px)] leading-[0.98] font-extrabold uppercase">
-                Pas de réseau au fond du bois&nbsp;? Aucun problème.
+                Pas de réseau au fond du bois&nbsp;? Votre carnet de chasse marche quand même.
               </h2>
               <p className="max-w-[520px] text-[19px] text-forest-soft">
                 Ouvrez la battue avant de partir&nbsp;: tout est gardé sur le téléphone. Pointage,
@@ -456,7 +448,7 @@ export function LandingPage() {
           <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-5">
             <Eyebrow className="mb-0">Fin de saison</Eyebrow>
             <h2 className="font-display text-[clamp(36px,4vw,52px)] leading-none font-extrabold uppercase">
-              Le bilan est déjà fait.
+              Le bilan de la saison de chasse est déjà fait.
             </h2>
             <p className="text-[19px] text-ink-soft">
               Tableau de chasse, présences, cotisations, partage du gibier&nbsp;: tout est rangé au
@@ -475,7 +467,7 @@ export function LandingPage() {
           <div className={cn(container, "py-24")}>
             <Eyebrow>Pour qui</Eyebrow>
             <h2 className="mb-10 max-w-[760px] font-display text-[clamp(36px,4vw,52px)] leading-none font-extrabold uppercase">
-              Chacun au bureau y trouve son compte.
+              Président, trésorier, secrétaire&nbsp;: toute la société de chasse y gagne.
             </h2>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
               {ROLES.map((r) => (
@@ -485,6 +477,33 @@ export function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ============ GUIDES ============ */}
+        <section className={cn(container, "py-24")}>
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-[720px]">
+              <Eyebrow>Guide</Eyebrow>
+              <h2 className={h2}>Comment fonctionne le cahier de battue.</h2>
+            </div>
+            <Link href="/guide" className="inline-flex items-center gap-2 font-semibold text-primary hover:text-foreground">
+              Tout le guide
+              <ArrowRight className="size-5" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+            {GUIDES.map(({ slug, court, description, icon: Icon }) => (
+              <Link
+                key={slug}
+                href={`/guide/${slug}`}
+                className="flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary"
+              >
+                <Icon className="size-6 text-primary" aria-hidden="true" />
+                <span className="text-lg font-bold">{court}</span>
+                <span className="text-[15px] text-ink-muted">{description}</span>
+              </Link>
+            ))}
           </div>
         </section>
 
@@ -554,22 +573,6 @@ export function LandingPage() {
         </section>
       </main>
 
-      {/* ============ FOOTER ============ */}
-      <footer className="border-t border-border">
-        <div className={cn(container, "flex flex-wrap items-center justify-between gap-5 py-10 text-[15px] text-ink-muted")}>
-          <div className="flex items-center gap-2.5">
-            <Logo small />
-            <span className="font-semibold text-foreground">Cahier de battue</span>
-            <span>· © {new Date().getFullYear()}</span>
-          </div>
-          <div className="flex flex-wrap gap-5">
-            {/* TODO : pages légales à créer. */}
-            <a href="#" className="hover:text-foreground">Mentions légales</a>
-            <a href="#" className="hover:text-foreground">Confidentialité</a>
-            <a href="#" className="hover:text-foreground">Contact</a>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </VitrineShell>
   );
 }

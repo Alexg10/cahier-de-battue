@@ -4,7 +4,12 @@ import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { SignUpForm } from "@/features/auth/sign-up-form";
 
-export const metadata: Metadata = { title: "Créer un compte" };
+export const metadata: Metadata = {
+  title: "Créer un cahier de battue gratuit",
+  description:
+    "Créez gratuitement le cahier de battue de votre société de chasse : participants, pointage, tableau de chasse et partage du gibier sur téléphone.",
+  alternates: { canonical: "/inscription" },
+};
 
 export default async function InscriptionPage({
   searchParams,

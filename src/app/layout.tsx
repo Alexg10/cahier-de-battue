@@ -1,19 +1,30 @@
 import type { Metadata, Viewport } from "next";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Base des URL absolues (canonical, Open Graph, sitemap…).
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Cahier de battue",
-    template: "%s · Cahier de battue",
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Le cahier de battue numérique : participants, pointage, prélèvements. Utilisable hors réseau.",
-  applicationName: "Cahier de battue",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: SITE_NAME,
+    url: "/",
+  },
+  twitter: { card: "summary_large_image" },
+  // Les numéros (permis, bracelets…) ne doivent pas devenir des liens d'appel.
+  formatDetection: { telephone: false },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Cahier de battue",
+    title: SITE_NAME,
   },
 };
 

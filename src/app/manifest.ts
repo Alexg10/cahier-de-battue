@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Cahier de battue",
+    name: SITE_NAME,
     short_name: "Battue",
-    description:
-      "Le cahier de battue numérique : participants, pointage, prélèvements.",
+    description: SITE_DESCRIPTION,
     start_url: "/",
     display: "standalone",
     background_color: "#f6f6f3",
