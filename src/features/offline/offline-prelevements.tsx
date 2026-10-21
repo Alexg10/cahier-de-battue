@@ -8,6 +8,7 @@ import { ConfirmDelete } from "@/components/confirm-delete";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { poidsValide } from "@/lib/format";
 import type { LocalPrelevement } from "./db";
 import {
   useInviteParticipations,
@@ -78,7 +79,7 @@ export function OfflinePrelevements({
         />
       ) : (
         <>
-          <Button block variant="secondary" onClick={() => setEditing("new")}>
+          <Button block onClick={() => setEditing("new")}>
             <Plus />
             Ajouter un prélèvement
           </Button>
@@ -108,10 +109,12 @@ export function OfflinePrelevements({
                         <Badge variant="muted">{SEXE_LABEL[p.sexe]}</Badge>
                       ) : null}
                       {p.age ? <Badge variant="muted">{p.age}</Badge> : null}
-                      {p.poids ? (
+                      {poidsValide(p.poids) ? (
                         <Badge variant="muted">{p.poids} kg</Badge>
                       ) : null}
-                      {tireurNom(p) ? <span>Tireur : {tireurNom(p)}</span> : null}
+                      {tireurNom(p) ? (
+                        <span>Tireur : {tireurNom(p)}</span>
+                      ) : null}
                     </div>
                   </div>
                   <button
@@ -168,9 +171,12 @@ function PrelevementEditor({
       setError("L'espèce est obligatoire.");
       return;
     }
-    const poidsVal = poids.trim()
-      ? String(Number(poids.replace(",", ".")).toFixed(2))
-      : null;
+    const poidsNum = Number(poids.trim().replace(",", "."));
+    if (poids.trim() && !Number.isFinite(poidsNum)) {
+      setError("Poids invalide : saisissez un nombre (ex. 42,5).");
+      return;
+    }
+    const poidsVal = poids.trim() ? poidsNum.toFixed(2) : null;
     upsertPrelevement(battueId, {
       id: prelevement?.id,
       espece: espece.trim(),

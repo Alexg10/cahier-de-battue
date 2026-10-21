@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { requireCahier } from "@/features/cahiers/guard";
-import { DistributionTable } from "@/features/distribution/distribution-table";
+import {
+  DistributionTable,
+  PastilleEspece,
+} from "@/features/distribution/distribution-table";
 import { saisonDistributionMatrix } from "@/features/distribution/queries";
 import { PrintButton } from "@/features/export/print-button";
 
@@ -58,7 +61,19 @@ export default async function DistributionImpressionPage({
               </span>
             ))}
             {" · "}gigot tireur (gT) attribué d&apos;office au tireur de chaque
-            animal.
+            animal d&apos;une espèce découpée ; autres espèces distribuées
+            entières.
+          </p>
+        ) : null}
+        {data.especes.length > 0 ? (
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
+            Espèces :
+            {data.especes.map((e) => (
+              <span key={e.nom} className="inline-flex items-center gap-1">
+                <PastilleEspece espece={e} />
+                {e.nom}
+              </span>
+            ))}
           </p>
         ) : null}
       </header>

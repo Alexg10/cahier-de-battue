@@ -27,6 +27,21 @@ export type SyncInvitePerson = {
   parrainPrenom: string | null;
 };
 
+/**
+ * Nouvel invité (personne du cahier) créé sur l'appareil, éventuellement
+ * hors-ligne : poussé au serveur à la synchro suivante (création uniquement).
+ */
+export type SyncNewInvite = {
+  id: string;
+  parrainType: "PARTICIPANT" | "PROPRIETAIRE";
+  parrainId: string;
+  nom: string;
+  prenom: string;
+  numPermis: string | null;
+  numValidation: string | null;
+  numAssurance: string | null;
+};
+
 /** Participation d'un invité à une battue (entité modifiable et synchronisée). */
 export type SyncInviteParticipation = {
   id: string;
@@ -66,7 +81,9 @@ export type SyncDistribution = {
   battueId: string;
   recipientType: "PARTICIPANT" | "PROPRIETAIRE" | "INVITE";
   recipientId: string;
-  morceau: string; // code du morceau
+  morceau: string; // code du morceau (ou ANIMAL_ENTIER_CODE)
+  /** Espèce de l'animal ; null pour les distributions antérieures. */
+  espece: string | null;
   updatedAt: string;
   deletedAt: string | null;
 };
@@ -109,6 +126,8 @@ export type SyncCahierMeta = {
   /** Montants de cotisation par battue (euros). */
   cotisationChasse: number;
   cotisationChiens: number;
+  /** Espèces distribuées en morceaux (les autres : animal entier). */
+  especesDecoupees: string[];
   /** Morceaux distribuables (libellé + code). */
   morceaux: Morceau[];
 };
@@ -135,6 +154,8 @@ export type SyncPushBody = {
     updatedAt: string;
   };
   pointages: SyncPointage[];
+  /** Invités créés sur l'appareil (à créer avant leurs participations). */
+  invites?: SyncNewInvite[];
   inviteParticipations: SyncInviteParticipation[];
   prelevements: SyncPrelevement[];
   /** Fiches participant corrigées localement (permis, assurance, téléphone…). */

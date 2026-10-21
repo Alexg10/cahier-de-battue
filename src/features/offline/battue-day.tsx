@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { CollapsibleCard } from "@/components/collapsible-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ESPECES_DECOUPEES_PAR_DEFAUT } from "@/features/cahiers/constants";
 import { formatDateLong } from "@/lib/format";
 import type { BattueSnapshot } from "./types";
 import { ConsignesCard } from "./consignes-card";
@@ -10,6 +12,7 @@ import { OfflineDistribution } from "./offline-distribution";
 import { OfflineInvites } from "./offline-invites";
 import { OfflinePointage } from "./offline-pointage";
 import { OfflinePrelevements } from "./offline-prelevements";
+import { useInvitePersons } from "./hooks";
 import { seedIfEmpty, sync } from "./sync";
 import { SyncBadge } from "./sync-badge";
 
@@ -48,16 +51,22 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
   }, []);
 
   const { participants, presidentId, battue, cahier } = snapshot;
+  // Inclut les invités créés sur l'appareil (hors-ligne) pas encore synchronisés.
+  const invitePersons = useInvitePersons(battueId, snapshot.invitePersons);
   const chasseurs = participants.filter((p) => p.estChasseur);
   // Parrains possibles d'un invité : chasseurs + propriétaires.
   const parrains = [
     ...chasseurs.map((c) => ({
       value: `PARTICIPANT:${c.id}`,
       label: `${c.nom.toUpperCase()} ${c.prenom}`,
+      nom: c.nom,
+      prenom: c.prenom,
     })),
     ...snapshot.proprietaires.map((p) => ({
       value: `PROPRIETAIRE:${p.id}`,
       label: `${p.nom.toUpperCase()} ${p.prenom} (propriétaire)`,
+      nom: p.nom,
+      prenom: p.prenom,
     })),
   ];
   const president = participants.find((p) => p.id === presidentId);
@@ -105,72 +114,59 @@ export function BattueDayClient({ snapshot }: { snapshot: BattueSnapshot }) {
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pointage / signatures</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {chasseurs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun chasseur dans la liste des participants.
-            </p>
-          ) : (
-            <OfflinePointage
-              battueId={battueId}
-              chasseurs={participants}
-              cotisationChasse={cahier.cotisationChasse}
-              cotisationChiens={cahier.cotisationChiens}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Invités</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OfflineInvites
+      <CollapsibleCard title="Pointage / signatures">
+        {chasseurs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun chasseur dans la liste des participants.
+          </p>
+        ) : (
+          <OfflinePointage
             battueId={battueId}
-            cahierId={cahier.id}
-            invitePersons={snapshot.invitePersons}
-            parrains={parrains}
+            chasseurs={participants}
+            cotisationChasse={cahier.cotisationChasse}
+            cotisationChiens={cahier.cotisationChiens}
           />
-        </CardContent>
-      </Card>
+        )}
+      </CollapsibleCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tableau de chasse</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OfflinePrelevements
-            battueId={battueId}
-            especes={especes}
-            chasseurs={chasseurs}
-            invitePersons={snapshot.invitePersons}
-          />
-        </CardContent>
-      </Card>
+      <CollapsibleCard title="Invités">
+        <OfflineInvites
+          battueId={battueId}
+          invitePersons={invitePersons}
+          parrains={parrains}
+        />
+      </CollapsibleCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribution du gibier</CardTitle>
+      <CollapsibleCard title="Tableau de chasse">
+        <OfflinePrelevements
+          battueId={battueId}
+          especes={especes}
+          chasseurs={chasseurs}
+          invitePersons={invitePersons}
+        />
+      </CollapsibleCard>
+
+      <CollapsibleCard
+        title="Distribution du gibier"
+        description={
           <p className="text-sm text-muted-foreground">
             Gigot tireur attribué d&apos;office au tireur ; ajoutez les autres
             morceaux.
           </p>
-        </CardHeader>
-        <CardContent>
-          <OfflineDistribution
-            battueId={battueId}
-            participants={participants}
-            proprietaires={snapshot.proprietaires}
-            invitePersons={snapshot.invitePersons}
-            morceaux={cahier.morceaux}
-          />
-        </CardContent>
-      </Card>
+        }
+      >
+        <OfflineDistribution
+          battueId={battueId}
+          participants={participants}
+          proprietaires={snapshot.proprietaires}
+          invitePersons={invitePersons}
+          morceaux={cahier.morceaux}
+          especesDecoupees={
+            // Instantané antérieur au réglage (page en cache) : valeurs par défaut.
+            cahier.especesDecoupees ?? [...ESPECES_DECOUPEES_PAR_DEFAUT]
+          }
+        />
+      </CollapsibleCard>
     </div>
   );
 }

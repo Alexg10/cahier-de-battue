@@ -3,6 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { getDB } from "./db";
+import type { SyncInvitePerson } from "./types";
 
 export function useBattueMeta(battueId: string) {
   return useLiveQuery(() => getDB().meta.get(battueId), [battueId]);
@@ -33,6 +34,48 @@ export function useInviteParticipations(battueId: string) {
     },
     [battueId],
     [],
+  );
+}
+
+/**
+ * Invités (personnes) sélectionnables sur la battue : liste du rendu serveur,
+ * complétée par l'instantané local (tiré à la dernière synchro) et par les
+ * invités créés sur l'appareil pas encore synchronisés. Dédoublonné par id.
+ */
+export function useInvitePersons(
+  battueId: string,
+  initial: SyncInvitePerson[],
+) {
+  return useLiveQuery(
+    async () => {
+      const db = getDB();
+      const [meta, pending] = await Promise.all([
+        db.meta.get(battueId),
+        db.newInvites.where("battueId").equals(battueId).toArray(),
+      ]);
+      const byId = new Map<string, SyncInvitePerson>();
+      for (const p of meta?.invitePersons ?? []) byId.set(p.id, p);
+      for (const p of initial) byId.set(p.id, p);
+      const locaux: SyncInvitePerson[] = pending
+        .filter((p) => !byId.has(p.id))
+        .map((p) => ({
+          id: p.id,
+          nom: p.nom,
+          prenom: p.prenom,
+          numPermis: p.numPermis,
+          numValidation: p.numValidation,
+          numAssurance: p.numAssurance,
+          parrainNom: p.parrainNom,
+          parrainPrenom: p.parrainPrenom,
+        }));
+      return [...byId.values(), ...locaux].sort((a, b) =>
+        `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, "fr", {
+          sensitivity: "base",
+        }),
+      );
+    },
+    [battueId, initial],
+    initial,
   );
 }
 
@@ -92,16 +135,19 @@ export function useDirtyCount(battueId: string) {
   return useLiveQuery(
     async () => {
       const db = getDB();
-      const [pts, invs, prels, parts, dists, deleg] = await Promise.all([
-        db.pointages.where("battueId").equals(battueId).toArray(),
-        db.inviteParticipations.where("battueId").equals(battueId).toArray(),
-        db.prelevements.where("battueId").equals(battueId).toArray(),
-        db.participants.where("battueId").equals(battueId).toArray(),
-        db.distributions.where("battueId").equals(battueId).toArray(),
-        db.delegation.get(battueId),
-      ]);
+      const [pts, newInvs, invs, prels, parts, dists, deleg] =
+        await Promise.all([
+          db.pointages.where("battueId").equals(battueId).toArray(),
+          db.newInvites.where("battueId").equals(battueId).toArray(),
+          db.inviteParticipations.where("battueId").equals(battueId).toArray(),
+          db.prelevements.where("battueId").equals(battueId).toArray(),
+          db.participants.where("battueId").equals(battueId).toArray(),
+          db.distributions.where("battueId").equals(battueId).toArray(),
+          db.delegation.get(battueId),
+        ]);
       let n = 0;
       n += pts.filter((r) => r.dirty === 1).length;
+      n += newInvs.filter((r) => r.dirty === 1).length;
       n += invs.filter((r) => r.dirty === 1).length;
       n += prels.filter((r) => r.dirty === 1).length;
       n += parts.filter((r) => r.dirty === 1).length;

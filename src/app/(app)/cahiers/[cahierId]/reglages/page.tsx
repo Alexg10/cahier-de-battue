@@ -30,6 +30,7 @@ export default async function ReglagesPage({
                 territoire: cahier.territoire,
                 saison: cahier.saison,
                 especes: cahier.especes,
+                especesDecoupees: cahier.especesDecoupees,
                 reglesSecurite: cahier.reglesSecurite,
                 cotisationChasse: cahier.cotisationChasse,
                 cotisationChiens: cahier.cotisationChiens,

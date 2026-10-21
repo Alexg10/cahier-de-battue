@@ -1,0 +1,1431 @@
+{
+  "id": "995fde66-7e94-4d26-8908-40e59ee3affc",
+  "prevId": "0e1c5352-4ccc-4266-b483-83fcb1587c6c",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.battues": {
+      "name": "battues",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cahier_id": {
+          "name": "cahier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lieu": {
+          "name": "lieu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heure_debut": {
+          "name": "heure_debut",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heure_fin": {
+          "name": "heure_fin",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responsable_id": {
+          "name": "responsable_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "especes_jour": {
+          "name": "especes_jour",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "signature_delegant": {
+          "name": "signature_delegant",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signature_delegue": {
+          "name": "signature_delegue",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cloturee": {
+          "name": "cloturee",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "battues_cahier_id_cahiers_id_fk": {
+          "name": "battues_cahier_id_cahiers_id_fk",
+          "tableFrom": "battues",
+          "tableTo": "cahiers",
+          "columnsFrom": [
+            "cahier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "battues_responsable_id_participants_id_fk": {
+          "name": "battues_responsable_id_participants_id_fk",
+          "tableFrom": "battues",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "responsable_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "battue_numero_unique": {
+          "name": "battue_numero_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "cahier_id",
+            "numero"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.bureau_membres": {
+      "name": "bureau_membres",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cahier_id": {
+          "name": "cahier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "bureau_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "bureau_membres_cahier_id_cahiers_id_fk": {
+          "name": "bureau_membres_cahier_id_cahiers_id_fk",
+          "tableFrom": "bureau_membres",
+          "tableTo": "cahiers",
+          "columnsFrom": [
+            "cahier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "bureau_membres_participant_id_participants_id_fk": {
+          "name": "bureau_membres_participant_id_participants_id_fk",
+          "tableFrom": "bureau_membres",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "bureau_role_unique": {
+          "name": "bureau_role_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "cahier_id",
+            "role"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cahiers": {
+      "name": "cahiers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "territoire": {
+          "name": "territoire",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "saison": {
+          "name": "saison",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "especes": {
+          "name": "especes",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "regles_securite": {
+          "name": "regles_securite",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "cotisation_chasse": {
+          "name": "cotisation_chasse",
+          "type": "numeric(8, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "cotisation_chiens": {
+          "name": "cotisation_chiens",
+          "type": "numeric(8, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "morceaux": {
+          "name": "morceaux",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cahiers_user_id_users_id_fk": {
+          "name": "cahiers_user_id_users_id_fk",
+          "tableFrom": "cahiers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.distributions": {
+      "name": "distributions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "battue_id": {
+          "name": "battue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipient_type": {
+          "name": "recipient_type",
+          "type": "distribution_recipient",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipient_id": {
+          "name": "recipient_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "morceau": {
+          "name": "morceau",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "espece": {
+          "name": "espece",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "distributions_battue_id_battues_id_fk": {
+          "name": "distributions_battue_id_battues_id_fk",
+          "tableFrom": "distributions",
+          "tableTo": "battues",
+          "columnsFrom": [
+            "battue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.invite_participations": {
+      "name": "invite_participations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "battue_id": {
+          "name": "battue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invite_id": {
+          "name": "invite_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "poste_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'POSTE'"
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "invite_participations_battue_id_battues_id_fk": {
+          "name": "invite_participations_battue_id_battues_id_fk",
+          "tableFrom": "invite_participations",
+          "tableTo": "battues",
+          "columnsFrom": [
+            "battue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invite_participations_invite_id_invites_id_fk": {
+          "name": "invite_participations_invite_id_invites_id_fk",
+          "tableFrom": "invite_participations",
+          "tableTo": "invites",
+          "columnsFrom": [
+            "invite_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "invite_participation_unique": {
+          "name": "invite_participation_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "battue_id",
+            "invite_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.invites": {
+      "name": "invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cahier_id": {
+          "name": "cahier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parrain_type": {
+          "name": "parrain_type",
+          "type": "invite_parrain",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parrain_id": {
+          "name": "parrain_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prenom": {
+          "name": "prenom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "num_permis": {
+          "name": "num_permis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "num_validation": {
+          "name": "num_validation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "num_assurance": {
+          "name": "num_assurance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "invites_cahier_id_cahiers_id_fk": {
+          "name": "invites_cahier_id_cahiers_id_fk",
+          "tableFrom": "invites",
+          "tableTo": "cahiers",
+          "columnsFrom": [
+            "cahier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.participants": {
+      "name": "participants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cahier_id": {
+          "name": "cahier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prenom": {
+          "name": "prenom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adresse": {
+          "name": "adresse",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_naissance": {
+          "name": "date_naissance",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lieu_naissance": {
+          "name": "lieu_naissance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "num_permis": {
+          "name": "num_permis",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "permis_delivre_le": {
+          "name": "permis_delivre_le",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "permis_delivre_a": {
+          "name": "permis_delivre_a",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "num_validation": {
+          "name": "num_validation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type_validation": {
+          "name": "type_validation",
+          "type": "validation_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timbre_gg": {
+          "name": "timbre_gg",
+          "type": "timbre_gg_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nom_assurance": {
+          "name": "nom_assurance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adresse_assurance": {
+          "name": "adresse_assurance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "num_assurance": {
+          "name": "num_assurance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "participant_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'CHASSEUR'"
+        },
+        "est_chasseur": {
+          "name": "est_chasseur",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "parrain_type": {
+          "name": "parrain_type",
+          "type": "invite_parrain",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parrain_id": {
+          "name": "parrain_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participants_cahier_id_cahiers_id_fk": {
+          "name": "participants_cahier_id_cahiers_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "cahiers",
+          "columnsFrom": [
+            "cahier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plans": {
+      "name": "plans",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cahier_id": {
+          "name": "cahier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "taille": {
+          "name": "taille",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "data": {
+          "name": "data",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plans_cahier_id_cahiers_id_fk": {
+          "name": "plans_cahier_id_cahiers_id_fk",
+          "tableFrom": "plans",
+          "tableTo": "cahiers",
+          "columnsFrom": [
+            "cahier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pointages": {
+      "name": "pointages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "battue_id": {
+          "name": "battue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "poste_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'POSTE'"
+        },
+        "cotisation_chasse": {
+          "name": "cotisation_chasse",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "cotisation_chiens": {
+          "name": "cotisation_chiens",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signed_at": {
+          "name": "signed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pointages_battue_id_battues_id_fk": {
+          "name": "pointages_battue_id_battues_id_fk",
+          "tableFrom": "pointages",
+          "tableTo": "battues",
+          "columnsFrom": [
+            "battue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pointages_participant_id_participants_id_fk": {
+          "name": "pointages_participant_id_participants_id_fk",
+          "tableFrom": "pointages",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "pointage_unique": {
+          "name": "pointage_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "battue_id",
+            "participant_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.prelevements": {
+      "name": "prelevements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "battue_id": {
+          "name": "battue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "espece": {
+          "name": "espece",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "num_bracelet": {
+          "name": "num_bracelet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "age": {
+          "name": "age",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sexe": {
+          "name": "sexe",
+          "type": "sexe",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poids": {
+          "name": "poids",
+          "type": "numeric(6, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tireur_participant_id": {
+          "name": "tireur_participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tireur_invite_id": {
+          "name": "tireur_invite_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "prelevements_battue_id_battues_id_fk": {
+          "name": "prelevements_battue_id_battues_id_fk",
+          "tableFrom": "prelevements",
+          "tableTo": "battues",
+          "columnsFrom": [
+            "battue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "prelevements_tireur_participant_id_participants_id_fk": {
+          "name": "prelevements_tireur_participant_id_participants_id_fk",
+          "tableFrom": "prelevements",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "tireur_participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "prelevements_tireur_invite_id_invites_id_fk": {
+          "name": "prelevements_tireur_invite_id_invites_id_fk",
+          "tableFrom": "prelevements",
+          "tableTo": "invites",
+          "columnsFrom": [
+            "tireur_invite_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.proprietaires": {
+      "name": "proprietaires",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cahier_id": {
+          "name": "cahier_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prenom": {
+          "name": "prenom",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referent_id": {
+          "name": "referent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proprietaires_cahier_id_cahiers_id_fk": {
+          "name": "proprietaires_cahier_id_cahiers_id_fk",
+          "tableFrom": "proprietaires",
+          "tableTo": "cahiers",
+          "columnsFrom": [
+            "cahier_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "proprietaires_participant_id_participants_id_fk": {
+          "name": "proprietaires_participant_id_participants_id_fk",
+          "tableFrom": "proprietaires",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "proprietaires_referent_id_participants_id_fk": {
+          "name": "proprietaires_referent_id_participants_id_fk",
+          "tableFrom": "proprietaires",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "referent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.bureau_role": {
+      "name": "bureau_role",
+      "schema": "public",
+      "values": [
+        "PRESIDENT",
+        "TRESORIER",
+        "SECRETAIRE"
+      ]
+    },
+    "public.distribution_recipient": {
+      "name": "distribution_recipient",
+      "schema": "public",
+      "values": [
+        "PARTICIPANT",
+        "PROPRIETAIRE",
+        "INVITE"
+      ]
+    },
+    "public.invite_parrain": {
+      "name": "invite_parrain",
+      "schema": "public",
+      "values": [
+        "PARTICIPANT",
+        "PROPRIETAIRE"
+      ]
+    },
+    "public.participant_type": {
+      "name": "participant_type",
+      "schema": "public",
+      "values": [
+        "CHASSEUR",
+        "TRAQUEUR",
+        "ACCOMPAGNANT"
+      ]
+    },
+    "public.poste_role": {
+      "name": "poste_role",
+      "schema": "public",
+      "values": [
+        "POSTE",
+        "TRAQUEUR",
+        "ACCOMPAGNANT"
+      ]
+    },
+    "public.sexe": {
+      "name": "sexe",
+      "schema": "public",
+      "values": [
+        "MALE",
+        "FEMELLE",
+        "INDETERMINE"
+      ]
+    },
+    "public.timbre_gg_type": {
+      "name": "timbre_gg_type",
+      "schema": "public",
+      "values": [
+        "NATIONAL",
+        "DEPARTEMENTAL"
+      ]
+    },
+    "public.validation_type": {
+      "name": "validation_type",
+      "schema": "public",
+      "values": [
+        "DEPARTEMENTALE",
+        "BI_DEPARTEMENTALE",
+        "NATIONALE"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

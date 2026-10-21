@@ -6,6 +6,7 @@ import {
   pointageKey,
   type LocalDistribution,
   type LocalInviteParticipation,
+  type LocalNewInvite,
   type LocalParticipant,
   type LocalPointage,
   type LocalPrelevement,
@@ -14,6 +15,7 @@ import type {
   BattueSnapshot,
   SyncDistribution,
   SyncInviteParticipation,
+  SyncNewInvite,
   SyncParticipant,
   SyncPrelevement,
   SyncPushBody,
@@ -83,6 +85,17 @@ export async function mergeSnapshot(snap: BattueSnapshot) {
     }
   }
 
+  // Invités créés localement : dès que le serveur les connaît, ils sont servis
+  // par `meta.invitePersons` ; on retire la copie locale en attente.
+  const serverInviteIds = new Set(snap.invitePersons.map((i) => i.id));
+  const localNewInvites = await db.newInvites
+    .where("battueId")
+    .equals(battueId)
+    .toArray();
+  for (const ni of localNewInvites) {
+    if (serverInviteIds.has(ni.id)) await db.newInvites.delete(ni.id);
+  }
+
   await mergeById(db.inviteParticipations, battueId, snap.inviteParticipations);
   await mergeById(db.prelevements, battueId, snap.prelevements);
   await mergeById(db.distributions, battueId, snap.distributions);
@@ -105,7 +118,9 @@ async function mergeById<T extends { id: string; dirty: 0 | 1 }>(
     get: (id: string) => Promise<T | undefined>;
     put: (row: T) => Promise<unknown>;
     delete: (id: string) => Promise<unknown>;
-    where: (i: string) => { equals: (v: string) => { toArray: () => Promise<T[]> } };
+    where: (i: string) => {
+      equals: (v: string) => { toArray: () => Promise<T[]> };
+    };
   },
   battueId: string,
   serverRows: (SyncInviteParticipation | SyncPrelevement | SyncDistribution)[],
@@ -165,8 +180,9 @@ function stripRow<T extends { dirty: 0 | 1 }>(r: T) {
 
 async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
   const db = getDB();
-  const [pts, invs, prels, parts, dists, deleg] = await Promise.all([
+  const [pts, newInvs, invs, prels, parts, dists, deleg] = await Promise.all([
     db.pointages.where("battueId").equals(battueId).toArray(),
+    db.newInvites.where("battueId").equals(battueId).toArray(),
     db.inviteParticipations.where("battueId").equals(battueId).toArray(),
     db.prelevements.where("battueId").equals(battueId).toArray(),
     db.participants.where("battueId").equals(battueId).toArray(),
@@ -174,6 +190,7 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
     db.delegation.get(battueId),
   ]);
   const dirtyPts = pts.filter((p) => p.dirty === 1);
+  const dirtyNewInvs = newInvs.filter((i) => i.dirty === 1);
   const dirtyInvs = invs.filter((i) => i.dirty === 1);
   const dirtyPrels = prels.filter((p) => p.dirty === 1);
   const dirtyParts = parts.filter((p) => p.dirty === 1);
@@ -182,6 +199,7 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
 
   if (
     !dirtyPts.length &&
+    !dirtyNewInvs.length &&
     !dirtyInvs.length &&
     !dirtyPrels.length &&
     !dirtyParts.length &&
@@ -199,13 +217,27 @@ async function collectDirty(battueId: string): Promise<SyncPushBody | null> {
         }
       : undefined,
     pointages: dirtyPts.map(stripPointage),
-    inviteParticipations: dirtyInvs.map(
-      stripRow,
-    ) as LocalInviteParticipation[],
+    invites: dirtyNewInvs.map(stripNewInvite),
+    inviteParticipations: dirtyInvs.map(stripRow) as LocalInviteParticipation[],
     prelevements: dirtyPrels.map(stripRow) as LocalPrelevement[],
     participants: dirtyParts.map(stripParticipant),
     distributions: dirtyDists.map(stripRow) as LocalDistribution[],
   };
+}
+
+function stripNewInvite(i: LocalNewInvite): SyncNewInvite {
+  const {
+    battueId: _battueId,
+    parrainNom: _parrainNom,
+    parrainPrenom: _parrainPrenom,
+    dirty: _dirty,
+    ...rest
+  } = i;
+  void _battueId;
+  void _parrainNom;
+  void _parrainPrenom;
+  void _dirty;
+  return rest;
 }
 
 function stripParticipant(p: LocalParticipant): SyncParticipant {
@@ -260,7 +292,8 @@ export async function sync(battueId: string): Promise<boolean> {
       // Nettoyer le dirty des lignes inchangées depuis le push.
       for (const [key, up] of pushedPts) {
         const l = await db.pointages.get(key);
-        if (l && l.updatedAt === up) await db.pointages.update(key, { dirty: 0 });
+        if (l && l.updatedAt === up)
+          await db.pointages.update(key, { dirty: 0 });
       }
       for (const [id, up] of pushedInv) {
         const l = await db.inviteParticipations.get(id);
@@ -330,8 +363,10 @@ export async function signPointage(
     battueId,
     participantId,
     role,
-    cotisationChasse: cotisations?.chasse ?? existing?.cotisationChasse ?? false,
-    cotisationChiens: cotisations?.chiens ?? existing?.cotisationChiens ?? false,
+    cotisationChasse:
+      cotisations?.chasse ?? existing?.cotisationChasse ?? false,
+    cotisationChiens:
+      cotisations?.chiens ?? existing?.cotisationChiens ?? false,
     signature,
     signedAt: now(),
     updatedAt: now(),
@@ -381,6 +416,30 @@ export async function removePointage(battueId: string, participantId: string) {
     dirty: 1,
   });
   triggerSync(battueId);
+}
+
+export type NewInviteInput = {
+  parrainType: "PARTICIPANT" | "PROPRIETAIRE";
+  parrainId: string;
+  parrainNom: string | null;
+  parrainPrenom: string | null;
+  nom: string;
+  prenom: string;
+  numPermis: string | null;
+  numValidation: string | null;
+  numAssurance: string | null;
+};
+
+/**
+ * Crée un invité (personne du cahier) sur l'appareil, même hors-ligne : il est
+ * aussitôt utilisable sur la battue et sera créé côté serveur à la synchro.
+ */
+export async function createNewInvite(battueId: string, input: NewInviteInput) {
+  const db = getDB();
+  const id = uuid();
+  await db.newInvites.put({ ...input, id, battueId, dirty: 1 });
+  triggerSync(battueId);
+  return id;
 }
 
 export type InviteParticipationInput = {
@@ -497,6 +556,7 @@ export async function addDistribution(
   recipientType: SyncDistribution["recipientType"],
   recipientId: string,
   morceau: string,
+  espece: string | null,
 ) {
   const db = getDB();
   const id = uuid();
@@ -506,6 +566,7 @@ export async function addDistribution(
     recipientType,
     recipientId,
     morceau,
+    espece,
     updatedAt: now(),
     deletedAt: null,
     dirty: 1,

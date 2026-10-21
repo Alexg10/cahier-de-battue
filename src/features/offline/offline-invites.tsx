@@ -1,8 +1,7 @@
 "use client";
 
 import { Pencil, Plus, UserPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { SignaturePad } from "@/components/signature-pad";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,30 +11,36 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { createInviteQuick } from "@/features/invites/actions";
 import type { LocalInviteParticipation } from "./db";
 import { SECURITY_NOTICE } from "./constants";
 import { useInviteParticipations, useOnline } from "./hooks";
 import {
+  createNewInvite,
   removeInviteParticipation,
   upsertInviteParticipation,
 } from "./sync";
 import type { SyncInvitePerson } from "./types";
 
-/** Option de parrain : un chasseur ou un propriétaire. */
-export type ParrainOption = { value: string; label: string };
+/**
+ * Option de parrain : un chasseur ou un propriétaire. `value` est de la forme
+ * "PARTICIPANT:<uuid>" ou "PROPRIETAIRE:<uuid>".
+ */
+export type ParrainOption = {
+  value: string;
+  label: string;
+  nom: string;
+  prenom: string;
+};
 
 const fullName = (p: { nom: string; prenom: string }) =>
   `${p.nom.toUpperCase()} ${p.prenom}`;
 
 export function OfflineInvites({
   battueId,
-  cahierId,
   invitePersons,
   parrains,
 }: {
   battueId: string;
-  cahierId: string;
   invitePersons: SyncInvitePerson[];
   parrains: ParrainOption[];
 }) {
@@ -44,6 +49,8 @@ export function OfflineInvites({
     null | "new" | LocalInviteParticipation
   >(null);
   const [creating, setCreating] = useState(false);
+  // Invité tout juste créé : présélectionné dans l'éditeur de participation.
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   const personById = new Map(invitePersons.map((p) => [p.id, p]));
   const usedIds = new Set(participations.map((p) => p.inviteId));
@@ -66,26 +73,22 @@ export function OfflineInvites({
           invitePersons={invitePersons}
           usedIds={usedIds}
           participation={editing === "new" ? undefined : editing}
-          onDone={() => setEditing(null)}
+          initialInviteId={editing === "new" ? createdId : null}
+          onDone={() => {
+            setEditing(null);
+            setCreatedId(null);
+          }}
         />
       ) : (
         <>
           <div className="flex flex-col gap-2">
             {invitePersons.length > 0 ? (
-              <Button
-                block
-                variant="secondary"
-                onClick={() => setEditing("new")}
-              >
+              <Button block onClick={() => setEditing("new")}>
                 <UserPlus />
                 Ajouter un invité
               </Button>
             ) : null}
-            <Button
-              block
-              variant={invitePersons.length > 0 ? "ghost" : "secondary"}
-              onClick={() => setCreating(true)}
-            >
+            <Button block onClick={() => setCreating(true)}>
               <Plus />
               Ajouter un nouvel invité
             </Button>
@@ -141,28 +144,38 @@ export function OfflineInvites({
       <NewInviteDialog
         open={creating}
         onClose={() => setCreating(false)}
-        cahierId={cahierId}
+        onCreated={(id) => {
+          setCreating(false);
+          setCreatedId(id);
+          setEditing("new");
+        }}
+        battueId={battueId}
         parrains={parrains}
       />
     </div>
   );
 }
 
-/** Dialog de création d'un nouvel invité (personne du cahier), en ligne. */
+/**
+ * Dialog de création d'un nouvel invité (personne du cahier). Fonctionne
+ * hors-ligne : l'invité est enregistré sur l'appareil, utilisable tout de suite
+ * sur la battue, et créé côté serveur à la synchro.
+ */
 function NewInviteDialog({
   open,
   onClose,
-  cahierId,
+  onCreated,
+  battueId,
   parrains,
 }: {
   open: boolean;
   onClose: () => void;
-  cahierId: string;
+  onCreated: (id: string) => void;
+  battueId: string;
   parrains: ParrainOption[];
 }) {
-  const router = useRouter();
   const online = useOnline();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
@@ -181,36 +194,42 @@ function NewInviteDialog({
     setError(null);
   }
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     if (!nom.trim() || !prenom.trim()) {
       setError("Nom et prénom obligatoires.");
       return;
     }
-    if (!parrain) {
+    const option = parrains.find((p) => p.value === parrain);
+    if (!option) {
       setError("Choisissez un parrain.");
       return;
     }
-    startTransition(async () => {
-      const res = await createInviteQuick({
-        cahierId,
-        parrain,
+    const [parrainType, parrainId] = option.value.split(":") as [
+      "PARTICIPANT" | "PROPRIETAIRE",
+      string,
+    ];
+    setPending(true);
+    try {
+      const id = await createNewInvite(battueId, {
+        parrainType,
+        parrainId,
+        parrainNom: option.nom,
+        parrainPrenom: option.prenom,
         nom: nom.trim(),
         prenom: prenom.trim(),
-        numPermis: numPermis.trim(),
-        numValidation: numValidation.trim(),
-        numAssurance: numAssurance.trim(),
+        numPermis: numPermis.trim() || null,
+        numValidation: numValidation.trim() || null,
+        numAssurance: numAssurance.trim() || null,
       });
-      if (res?.error) {
-        setError(res.error);
-        return;
-      }
       reset();
-      onClose();
-      // Rafraîchit l'instantané serveur pour rendre l'invité sélectionnable.
-      router.refresh();
-    });
+      onCreated(id);
+    } catch {
+      setError("Impossible d'enregistrer l'invité sur l'appareil.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -223,7 +242,9 @@ function NewInviteDialog({
       <form onSubmit={submit} className="flex flex-col gap-4">
         {!online ? (
           <p className="rounded-[var(--radius)] bg-muted p-2 text-sm text-muted-foreground">
-            Une connexion est nécessaire pour créer un invité.
+            Hors connexion : l&apos;invité est enregistré sur l&apos;appareil et
+            utilisable tout de suite. Il sera ajouté au cahier au retour du
+            réseau.
           </p>
         ) : null}
         <div className="grid grid-cols-2 gap-3">
@@ -268,7 +289,7 @@ function NewInviteDialog({
         {error ? (
           <p className="text-sm font-medium text-destructive">{error}</p>
         ) : null}
-        <Button type="submit" block disabled={pending || !online}>
+        <Button type="submit" block disabled={pending}>
           {pending ? "Création…" : "Créer l'invité"}
         </Button>
       </form>
@@ -281,15 +302,19 @@ function ParticipationEditor({
   invitePersons,
   usedIds,
   participation,
+  initialInviteId,
   onDone,
 }: {
   battueId: string;
   invitePersons: SyncInvitePerson[];
   usedIds: Set<string>;
   participation?: LocalInviteParticipation;
+  initialInviteId?: string | null;
   onDone: () => void;
 }) {
-  const [inviteId, setInviteId] = useState(participation?.inviteId ?? "");
+  const [inviteId, setInviteId] = useState(
+    participation?.inviteId ?? initialInviteId ?? "",
+  );
   const [role, setRole] = useState<"POSTE" | "TRAQUEUR" | "ACCOMPAGNANT">(
     participation?.role ?? "POSTE",
   );

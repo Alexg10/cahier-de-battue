@@ -10,10 +10,29 @@ import {
   prelevements,
   proprietaires,
 } from "@/db/schema";
-import { GIGOT_TIREUR_CODE, type Morceau } from "@/features/cahiers/constants";
+import {
+  ANIMAL_ENTIER_CODE,
+  GIGOT_TIREUR_CODE,
+  estEspeceDecoupee,
+  type Morceau,
+} from "@/features/cahiers/constants";
+import { type EspeceLegende, legendeEspeces } from "./especes";
 
 /** Code du gigot attribué d'office au tireur. */
 const GIGOT = GIGOT_TIREUR_CODE;
+
+/**
+ * Part distribuée : code du morceau (null = animal entier) + espèce (null pour
+ * une distribution antérieure à la précision de l'espèce).
+ */
+export type Part = { morceau: string | null; espece: string | null };
+
+function part(morceau: string, espece: string | null): Part {
+  return {
+    morceau: morceau === ANIMAL_ENTIER_CODE ? null : morceau,
+    espece,
+  };
+}
 
 export type DistributionMatrix = {
   saison: string;
@@ -24,12 +43,14 @@ export type DistributionMatrix = {
     type: "PARTICIPANT" | "PROPRIETAIRE" | "INVITE";
     nom: string;
     prenom: string;
-    /** Codes reçus par battue (gigot d'office + attributions manuelles). */
-    cells: Record<string, string[]>;
+    /** Parts reçues par battue (gigot d'office + attributions manuelles). */
+    cells: Record<string, Part[]>;
     total: number;
   }[];
   totalParBattue: Record<string, number>;
   totalGeneral: number;
+  /** Espèces présentes dans le récap (abréviation + couleur). */
+  especes: EspeceLegende[];
 };
 
 /**
@@ -43,7 +64,11 @@ export async function saisonDistributionMatrix(
   const [[cahierRow], battueRows, participantRows, proprietaireRows] =
     await Promise.all([
       db
-        .select({ saison: cahiers.saison, morceaux: cahiers.morceaux })
+        .select({
+          saison: cahiers.saison,
+          morceaux: cahiers.morceaux,
+          especesDecoupees: cahiers.especesDecoupees,
+        })
         .from(cahiers)
         .where(eq(cahiers.id, cahierId)),
       db
@@ -88,6 +113,7 @@ export async function saisonDistributionMatrix(
           db
             .select({
               battueId: prelevements.battueId,
+              espece: prelevements.espece,
               tireurParticipantId: prelevements.tireurParticipantId,
               tireurInviteId: prelevements.tireurInviteId,
             })
@@ -106,6 +132,7 @@ export async function saisonDistributionMatrix(
               recipientType: distributions.recipientType,
               recipientId: distributions.recipientId,
               morceau: distributions.morceau,
+              espece: distributions.espece,
             })
             .from(distributions)
             .innerJoin(battues, eq(battues.id, distributions.battueId))
@@ -124,10 +151,7 @@ export async function saisonDistributionMatrix(
             })
             .from(invites)
             .where(
-              and(
-                eq(invites.cahierId, cahierId),
-                isNull(invites.deletedAt),
-              ),
+              and(eq(invites.cahierId, cahierId), isNull(invites.deletedAt)),
             ),
         ]);
 
@@ -157,25 +181,30 @@ export async function saisonDistributionMatrix(
     }
     return l;
   };
-  const push = (l: Ligne, battueId: string, code: string) => {
-    (l.cells[battueId] ??= []).push(code);
+  const especesVues = new Set<string>();
+  const push = (l: Ligne, battueId: string, p: Part) => {
+    (l.cells[battueId] ??= []).push(p);
+    if (p.espece) especesVues.add(p.espece);
     l.total += 1;
   };
 
-  // Gigots d'office dérivés des prélèvements.
+  const especesDecoupees = cahierRow?.especesDecoupees ?? [];
+  // Gigots d'office dérivés des prélèvements (espèces découpées uniquement).
   for (const p of prelevementRows) {
+    if (!estEspeceDecoupee(p.espece, especesDecoupees)) continue;
+    const gigot = part(GIGOT, p.espece);
     if (p.tireurParticipantId) {
       const part = partById.get(p.tireurParticipantId);
       if (part)
         push(
           ensure("PARTICIPANT", part.id, part.nom, part.prenom),
           p.battueId,
-          GIGOT,
+          gigot,
         );
     } else if (p.tireurInviteId) {
       const inv = invById.get(p.tireurInviteId);
       if (inv)
-        push(ensure("INVITE", inv.id, inv.nom, inv.prenom), p.battueId, GIGOT);
+        push(ensure("INVITE", inv.id, inv.nom, inv.prenom), p.battueId, gigot);
     }
   }
 
@@ -198,7 +227,11 @@ export async function saisonDistributionMatrix(
           ? propById.get(id)
           : invById.get(id);
     if (!info) continue;
-    push(ensure(type, id, info.nom, info.prenom), d.battueId, d.morceau);
+    push(
+      ensure(type, id, info.nom, info.prenom),
+      d.battueId,
+      part(d.morceau, d.espece),
+    );
   }
 
   const totalParBattue: Record<string, number> = {};
@@ -223,5 +256,6 @@ export async function saisonDistributionMatrix(
     lignes: sorted,
     totalParBattue,
     totalGeneral,
+    especes: legendeEspeces(especesVues),
   };
 }

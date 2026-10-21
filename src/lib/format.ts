@@ -49,3 +49,18 @@ export function formatPlage(
   if (d && f) return `${d} – ${f}`;
   return d ?? f ?? null;
 }
+
+/** Téléphone compacté pour les exports : sans espaces ni séparateurs (. - /). */
+export function formatTelephone(tel: string | null): string | null {
+  if (!tel) return null;
+  return tel.replace(/[\s.\-/]/g, "") || null;
+}
+
+/**
+ * Poids d'un prélèvement s'il est exploitable, sinon null. Écarte notamment
+ * "NaN" (saisie non numérique enregistrée telle quelle par le passé).
+ */
+export function poidsValide(poids: string | null): string | null {
+  if (!poids) return null;
+  return Number.isFinite(Number(poids)) ? poids : null;
+}

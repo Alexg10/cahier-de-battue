@@ -5,10 +5,12 @@ import {
   battues,
   distributions,
   inviteParticipations,
+  invites,
   participants,
   pointages,
   prelevements,
 } from "@/db/schema";
+import { poidsValide } from "@/lib/format";
 import type { SyncPushBody } from "./types";
 
 const toDate = (s: string | null) => (s ? new Date(s) : null);
@@ -60,6 +62,28 @@ export async function applyPush(
           deletedAt: toDate(p.deletedAt),
         },
       });
+  }
+
+  // Invités créés sur l'appareil : création seule, idempotente (un re-push
+  // après une réponse perdue ne crée pas de doublon), avant les participations
+  // et prélèvements qui les référencent. Jamais rejetés : l'invité a été
+  // présent ; un parrain supprimé entre-temps reste une référence orpheline,
+  // comme pour les invités existants.
+  for (const i of body.invites ?? []) {
+    await db
+      .insert(invites)
+      .values({
+        id: i.id,
+        cahierId,
+        parrainType: i.parrainType,
+        parrainId: i.parrainId,
+        nom: i.nom.trim(),
+        prenom: i.prenom.trim(),
+        numPermis: i.numPermis,
+        numValidation: i.numValidation,
+        numAssurance: i.numAssurance,
+      })
+      .onConflictDoNothing({ target: invites.id });
   }
 
   // Participations d'invités : upsert par id.
@@ -115,7 +139,7 @@ export async function applyPush(
         numBracelet: p.numBracelet,
         age: p.age,
         sexe: p.sexe,
-        poids: p.poids,
+        poids: poidsValide(p.poids),
         tireurParticipantId: p.tireurParticipantId,
         tireurInviteId: p.tireurInviteId,
         deletedAt: toDate(p.deletedAt),
@@ -127,7 +151,7 @@ export async function applyPush(
           numBracelet: p.numBracelet,
           age: p.age,
           sexe: p.sexe,
-          poids: p.poids,
+          poids: poidsValide(p.poids),
           tireurParticipantId: p.tireurParticipantId,
           tireurInviteId: p.tireurInviteId,
           deletedAt: toDate(p.deletedAt),
@@ -146,6 +170,7 @@ export async function applyPush(
         recipientType: d.recipientType,
         recipientId: d.recipientId,
         morceau: d.morceau,
+        espece: d.espece ?? null,
         deletedAt: toDate(d.deletedAt),
       })
       .onConflictDoUpdate({
@@ -154,6 +179,7 @@ export async function applyPush(
           recipientType: d.recipientType,
           recipientId: d.recipientId,
           morceau: d.morceau,
+          espece: d.espece ?? null,
           deletedAt: toDate(d.deletedAt),
         },
       });

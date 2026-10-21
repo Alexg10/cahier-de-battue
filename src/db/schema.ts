@@ -87,6 +87,14 @@ export const cahiers = pgTable("cahiers", {
   cotisationChiens: numeric("cotisation_chiens", { precision: 8, scale: 2 })
     .notNull()
     .default("0"),
+  /**
+   * Espèces distribuées en morceaux (gigot, épaule…) ; les autres espèces se
+   * distribuent entières. Doit rester aligné sur `ESPECES_DECOUPEES_PAR_DEFAUT`.
+   */
+  especesDecoupees: text("especes_decoupees")
+    .array()
+    .notNull()
+    .default(sql`ARRAY['Chevreuil','Cerf','Sanglier']::text[]`),
   /** Morceaux distribuables (libellé + code court), éditables. */
   morceaux: jsonb("morceaux")
     .$type<Morceau[]>()
@@ -341,7 +349,12 @@ export const distributions = pgTable("distributions", {
     .references(() => battues.id, { onDelete: "cascade" }),
   recipientType: distributionRecipientEnum("recipient_type").notNull(),
   recipientId: uuid("recipient_id").notNull(),
-  /** Code du morceau (référence la liste `morceaux` du cahier). */
+  /**
+   * Code du morceau (référence la liste `morceaux` du cahier), ou
+   * `ANIMAL_ENTIER_CODE` pour une espèce non découpée (pigeon, renard…).
+   */
   morceau: text("morceau").notNull(),
+  /** Espèce de l'animal (null pour les distributions antérieures). */
+  espece: text("espece"),
   ...tracking,
 });

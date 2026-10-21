@@ -36,6 +36,7 @@ export async function POST(
     return new Response("Corps invalide", { status: 400 });
   }
   body.pointages ??= [];
+  body.invites ??= [];
   body.inviteParticipations ??= [];
   body.prelevements ??= [];
   body.participants ??= [];

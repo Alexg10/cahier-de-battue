@@ -2,17 +2,14 @@ import "server-only";
 import ExcelJS from "exceljs";
 import type { CotisationsMatrix } from "@/features/cotisations/queries";
 import type { DistributionMatrix } from "@/features/distribution/queries";
-import { formatDateLong, formatHeure, refBattue } from "@/lib/format";
-
-/** ["g","g","e"] -> "g×2 e" (identique à l'affichage). */
-function formatCodes(codes: string[] | undefined): string {
-  if (!codes || codes.length === 0) return "";
-  const counts = new Map<string, number>();
-  for (const c of codes) counts.set(c, (counts.get(c) ?? 0) + 1);
-  return [...counts.entries()]
-    .map(([c, n]) => (n > 1 ? `${c}×${n}` : c))
-    .join(" ");
-}
+import { formatPartsTexte } from "@/features/distribution/especes";
+import type { Present } from "./battue-presents";
+import {
+  formatDateLong,
+  formatHeure,
+  poidsValide,
+  refBattue,
+} from "@/lib/format";
 
 const SEXE_LABEL: Record<string, string> = {
   MALE: "Mâle",
@@ -23,13 +20,6 @@ const ROLE_LABEL: Record<string, string> = {
   POSTE: "Posté",
   TRAQUEUR: "Traqueur",
   ACCOMPAGNANT: "Accompagnant",
-};
-
-/** Ordre d'affichage des rôles : postés, puis traqueurs, puis accompagnants. */
-const ROLE_ORDER: Record<string, number> = {
-  POSTE: 0,
-  TRAQUEUR: 1,
-  ACCOMPAGNANT: 2,
 };
 
 type CahierInfo = { nom: string; territoire: string; saison: string };
@@ -259,7 +249,8 @@ export async function buildDistributionWorkbook(data: DistributionMatrix) {
       b: `${l.nom.toUpperCase()} ${l.prenom}${DIST_TYPE[l.type] ?? ""}`,
       total: l.total,
     };
-    for (const b of data.battues) row[`b_${b.id}`] = formatCodes(l.cells[b.id]);
+    for (const b of data.battues)
+      row[`b_${b.id}`] = formatPartsTexte(l.cells[b.id], data.especes);
     sheet.addRow(row);
   }
 
@@ -273,8 +264,8 @@ export async function buildDistributionWorkbook(data: DistributionMatrix) {
   const added = sheet.addRow(totalRow);
   added.font = { bold: true };
 
-  // Feuille légende des codes.
-  if (data.morceaux.length > 0) {
+  // Feuille légende : codes des morceaux, puis abréviations des espèces.
+  if (data.morceaux.length > 0 || data.especes.length > 0) {
     const leg = wb.addWorksheet("Légende");
     leg.columns = [
       { header: "Code", key: "code", width: 10 },
@@ -282,6 +273,12 @@ export async function buildDistributionWorkbook(data: DistributionMatrix) {
     ];
     styleHeader(leg.getRow(1));
     for (const m of data.morceaux) leg.addRow({ code: m.code, label: m.label });
+    if (data.especes.length > 0) {
+      leg.addRow({});
+      const titre = leg.addRow({ code: "Abrév.", label: "Espèce" });
+      titre.font = { bold: true };
+      for (const e of data.especes) leg.addRow({ code: e.abrev, label: e.nom });
+    }
   }
 
   return Buffer.from(await wb.xlsx.writeBuffer());
@@ -375,7 +372,7 @@ export async function buildSaisonWorkbook(
       bracelet: p.numBracelet ?? "",
       age: p.age ?? "",
       sexe: p.sexe ? SEXE_LABEL[p.sexe] : "",
-      poids: p.poids ?? "",
+      poids: poidsValide(p.poids) ?? "",
       tireur: p.tireur,
     });
   }
@@ -395,27 +392,8 @@ export async function buildBattueWorkbook(
     especesJour: string[];
     responsable: string | null;
   },
-  pointages: {
-    prenom: string;
-    nom: string;
-    telephone: string | null;
-    numPermis: string | null;
-    numValidation: string | null;
-    numAssurance: string | null;
-    nomAssurance: string | null;
-    role: string;
-    cotisationChasse: boolean;
-    cotisationChiens: boolean;
-  }[],
-  invites: {
-    prenom: string;
-    nom: string;
-    numPermis: string | null;
-    numValidation: string | null;
-    numAssurance: string | null;
-    role: string;
-    parrain: string;
-  }[],
+  /** Présents (invités compris) : participants puis traqueurs en fin de feuille. */
+  presents: { participants: Present[]; traqueurs: Present[] },
   prelevements: {
     espece: string;
     numBracelet: string | null;
@@ -452,6 +430,7 @@ export async function buildBattueWorkbook(
   sPoint.columns = [
     { header: "Prénom", key: "prenom", width: 18 },
     { header: "Nom", key: "nom", width: 18 },
+    { header: "Invité", key: "invite", width: 24 },
     { header: "Téléphone", key: "tel", width: 16 },
     { header: "N° permis", key: "permis", width: 16 },
     { header: "N° validation", key: "val", width: 16 },
@@ -464,11 +443,9 @@ export async function buildBattueWorkbook(
   ];
   styleHeader(sPoint.getRow(1));
   let totalRecolte = 0;
-  // Postés, puis traqueurs, puis accompagnants (tri stable : ordre par nom conservé).
-  const pointagesTries = [...pointages].sort(
-    (a, b) => (ROLE_ORDER[a.role] ?? 0) - (ROLE_ORDER[b.role] ?? 0),
-  );
-  for (const p of pointagesTries) {
+  // Invité : cotisations non concernées (« — »).
+  const cotis = (v: boolean | null) => (v === null ? "—" : v ? "Oui" : "Non");
+  const addPresent = (p: Present) => {
     const montant =
       (p.cotisationChasse ? cotisations.chasse : 0) +
       (p.cotisationChiens ? cotisations.chiens : 0);
@@ -476,45 +453,35 @@ export async function buildBattueWorkbook(
     sPoint.addRow({
       prenom: p.prenom,
       nom: p.nom,
+      invite:
+        p.invitePar === null
+          ? ""
+          : p.invitePar
+            ? `Invité par ${p.invitePar}`
+            : "Invité",
       tel: p.telephone ?? "",
       permis: p.numPermis ?? "",
       val: p.numValidation ?? "",
       assNom: p.nomAssurance ?? "",
       ass: p.numAssurance ?? "",
       role: ROLE_LABEL[p.role] ?? p.role,
-      cotChasse: p.cotisationChasse ? "Oui" : "Non",
-      cotChiens: p.cotisationChiens ? "Oui" : "Non",
-      cotTotal: montant,
+      cotChasse: cotis(p.cotisationChasse),
+      cotChiens: cotis(p.cotisationChiens),
+      cotTotal: p.invitePar === null ? montant : "",
     });
+  };
+  presents.participants.forEach(addPresent);
+  if (presents.traqueurs.length > 0) {
+    sPoint.addRow({});
+    const titre = sPoint.addRow({ prenom: "Traqueurs" });
+    titre.font = { bold: true };
+    presents.traqueurs.forEach(addPresent);
   }
   const totalRow = sPoint.addRow({
     role: "Total récolté",
     cotTotal: totalRecolte,
   });
   totalRow.font = { bold: true };
-
-  const sInv = wb.addWorksheet("Invités");
-  sInv.columns = [
-    { header: "Prénom", key: "prenom", width: 18 },
-    { header: "Nom", key: "nom", width: 18 },
-    { header: "N° permis", key: "permis", width: 16 },
-    { header: "N° validation", key: "val", width: 16 },
-    { header: "N° assurance", key: "ass", width: 16 },
-    { header: "Poste", key: "role", width: 12 },
-    { header: "Invité par", key: "parrain", width: 22 },
-  ];
-  styleHeader(sInv.getRow(1));
-  for (const i of invites) {
-    sInv.addRow({
-      prenom: i.prenom,
-      nom: i.nom,
-      permis: i.numPermis ?? "",
-      val: i.numValidation ?? "",
-      ass: i.numAssurance ?? "",
-      role: ROLE_LABEL[i.role] ?? i.role,
-      parrain: i.parrain,
-    });
-  }
 
   const sPrel = wb.addWorksheet("Prélèvements");
   sPrel.columns = [
@@ -532,7 +499,7 @@ export async function buildBattueWorkbook(
       bracelet: p.numBracelet ?? "",
       age: p.age ?? "",
       sexe: p.sexe ? SEXE_LABEL[p.sexe] : "",
-      poids: p.poids ?? "",
+      poids: poidsValide(p.poids) ?? "",
       tireur: p.tireur,
     });
   }

@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { updateCahier, type FormState } from "./actions";
 import type { Morceau } from "./constants";
@@ -15,6 +16,7 @@ type Cahier = {
   territoire: string;
   saison: string;
   especes: string[];
+  especesDecoupees: string[];
   reglesSecurite: string;
   cotisationChasse: string;
   cotisationChiens: string;
@@ -28,7 +30,18 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
   );
   const [especes, setEspeces] = useState<string[]>(cahier.especes);
   const [nouvelle, setNouvelle] = useState("");
+  const [decoupees, setDecoupees] = useState<string[]>(cahier.especesDecoupees);
+  const [nouvelleDecoupee, setNouvelleDecoupee] = useState("");
   const [morceaux, setMorceaux] = useState<Morceau[]>(cahier.morceaux);
+  // Espèces chassables pas encore découpées : choix proposés à l'ajout.
+  const decoupables = especes.filter((e) => !decoupees.includes(e));
+
+  function ajouterDecoupee() {
+    if (nouvelleDecoupee && !decoupees.includes(nouvelleDecoupee)) {
+      setDecoupees((prev) => [...prev, nouvelleDecoupee]);
+    }
+    setNouvelleDecoupee("");
+  }
   const [mLabel, setMLabel] = useState("");
   const [mCode, setMCode] = useState("");
 
@@ -52,6 +65,8 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
 
   function retirer(e: string) {
     setEspeces((prev) => prev.filter((x) => x !== e));
+    // Une espèce qui n'est plus chassable n'est plus découpée non plus.
+    setDecoupees((prev) => prev.filter((x) => x !== e));
   }
 
   return (
@@ -59,6 +74,9 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
       <input type="hidden" name="id" value={cahier.id} />
       {especes.map((e) => (
         <input key={e} type="hidden" name="especes" value={e} />
+      ))}
+      {decoupees.map((e) => (
+        <input key={e} type="hidden" name="especesDecoupees" value={e} />
       ))}
       <input type="hidden" name="morceaux" value={JSON.stringify(morceaux)} />
 
@@ -167,7 +185,7 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
             }}
             placeholder="Ajouter une espèce"
           />
-          <Button type="button" variant="secondary" size="icon" onClick={ajouter}>
+          <Button type="button" size="icon" onClick={ajouter}>
             <Plus />
           </Button>
         </div>
@@ -182,7 +200,9 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
         </p>
         <div className="flex flex-wrap gap-2">
           {morceaux.length === 0 ? (
-            <span className="text-sm text-muted-foreground">Aucun morceau.</span>
+            <span className="text-sm text-muted-foreground">
+              Aucun morceau.
+            </span>
           ) : (
             morceaux.map((m) => (
               <span
@@ -224,15 +244,84 @@ export function ReglagesForm({ cahier }: { cahier: Cahier }) {
             placeholder="Code"
             className="w-24"
           />
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon"
-            onClick={ajouterMorceau}
-          >
+          <Button type="button" size="icon" onClick={ajouterMorceau}>
             <Plus />
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-semibold">
+          Espèces découpées en morceaux
+        </span>
+        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+          <p>
+            Pour ces espèces, la distribution du gibier propose chaque morceau
+            suivi du nom de l&apos;espèce (ex. « Gigot Sanglier », « Épaule
+            Chevreuil ») et le gigot tireur est attribué d&apos;office à celui
+            qui a tiré l&apos;animal.
+          </p>
+          <p>
+            Les autres espèces chassables (pigeon, renard, lièvre…) se
+            distribuent entières, sous leur seul nom (ex. « Pigeon »), sans
+            gigot tireur.
+          </p>
+          <p>
+            Dans tous les cas, seules les espèces tirées le jour de la battue
+            sont proposées.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {decoupees.length === 0 ? (
+            <span className="text-sm text-muted-foreground">
+              Aucune : toutes les espèces se distribuent entières.
+            </span>
+          ) : (
+            decoupees.map((e) => (
+              <span
+                key={e}
+                className="inline-flex items-center gap-1 rounded-full bg-accent py-1 pl-3 pr-1 text-sm font-medium text-accent-foreground"
+              >
+                {e}
+                <button
+                  type="button"
+                  aria-label={`Retirer ${e}`}
+                  onClick={() =>
+                    setDecoupees((prev) => prev.filter((x) => x !== e))
+                  }
+                  className="flex size-5 items-center justify-center rounded-full hover:bg-background/60"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </span>
+            ))
+          )}
+        </div>
+        {decoupables.length > 0 ? (
+          <div className="flex gap-2">
+            <Select
+              aria-label="Ajouter une espèce découpée"
+              value={nouvelleDecoupee}
+              onChange={(ev) => setNouvelleDecoupee(ev.target.value)}
+              className="flex-1"
+            >
+              <option value="">— Choisir une espèce chassable —</option>
+              {decoupables.map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}
+            </Select>
+            <Button
+              type="button"
+              size="icon"
+              onClick={ajouterDecoupee}
+              disabled={!nouvelleDecoupee}
+            >
+              <Plus />
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {state?.error ? (

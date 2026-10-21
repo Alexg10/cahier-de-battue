@@ -9,11 +9,13 @@ import { getBureau } from "@/features/participants/queries";
 import { listInvites } from "@/features/invites/queries";
 import { listPointagesDetailed } from "@/features/pointages/queries";
 import { listPrelevements } from "@/features/prelevements/queries";
+import { type Present, splitPresents } from "@/features/export/battue-presents";
 import { PrintButton } from "@/features/export/print-button";
 import {
   formatDateLong,
   formatEuro,
   formatPlage,
+  poidsValide,
   refBattue,
 } from "@/lib/format";
 
@@ -30,17 +32,92 @@ const ROLE_LABEL: Record<string, string> = {
   ACCOMPAGNANT: "Accompagnant",
 };
 
-/** Ordre d'affichage : postés, puis traqueurs, puis accompagnants. */
-const ROLE_ORDER: Record<string, number> = {
-  POSTE: 0,
-  TRAQUEUR: 1,
-  ACCOMPAGNANT: 2,
-};
-
 function SignatureImg({ src }: { src: string | null }) {
   if (!src) return <span className="text-gray-400">—</span>;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt="signature" className="h-10 object-contain" />;
+}
+
+/** Tableau de pointage (participants ou traqueurs), invités repérés par un libellé. */
+function PresentsTable({
+  rows,
+  showRole,
+  showChasse,
+  showChiens,
+  vide,
+}: {
+  rows: Present[];
+  showRole: boolean;
+  showChasse: boolean;
+  showChiens: boolean;
+  vide: string;
+}) {
+  const cotisation = (v: boolean | null) => (v === null ? "—" : v ? "✓" : "X");
+  return (
+    <table className="w-full border-collapse text-xs">
+      <thead>
+        <tr className="border-b border-black text-left">
+          <th className="py-1">Nom</th>
+          <th className="py-1 pr-4">Téléphone</th>
+          <th className="py-1">Permis</th>
+          <th className="py-1">Validation</th>
+          <th className="py-1">Assurance</th>
+          {showRole ? <th className="py-1">Rôle</th> : null}
+          {showChasse ? <th className="py-1">Chasse</th> : null}
+          {showChiens ? <th className="py-1">Chiens</th> : null}
+          <th className="py-1">Signature</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.length === 0 ? (
+          <tr>
+            <td colSpan={9} className="py-2 text-gray-500">
+              {vide}
+            </td>
+          </tr>
+        ) : (
+          rows.map((p) => (
+            <tr
+              key={p.key}
+              className="break-inside-avoid border-b border-gray-300"
+            >
+              <td className="py-1">
+                {p.nom.toUpperCase()} {p.prenom}
+                {p.invitePar !== null ? (
+                  <span className="mt-0.5 block text-[10px] text-gray-600">
+                    <span className="rounded border border-gray-500 px-1 font-semibold uppercase">
+                      Invité
+                    </span>
+                    {p.invitePar ? ` par ${p.invitePar}` : null}
+                  </span>
+                ) : null}
+              </td>
+              <td className="py-1 pr-4 whitespace-nowrap">
+                {p.telephone ?? "—"}
+              </td>
+              <td className="py-1">{p.numPermis ?? "—"}</td>
+              <td className="py-1">{p.numValidation ?? "—"}</td>
+              <td className="py-1">
+                {p.nomAssurance || p.numAssurance
+                  ? [p.nomAssurance, p.numAssurance].filter(Boolean).join(" · ")
+                  : "—"}
+              </td>
+              {showRole ? <td className="py-1">{ROLE_LABEL[p.role]}</td> : null}
+              {showChasse ? (
+                <td className="py-1">{cotisation(p.cotisationChasse)}</td>
+              ) : null}
+              {showChiens ? (
+                <td className="py-1">{cotisation(p.cotisationChiens)}</td>
+              ) : null}
+              <td className="py-1">
+                <SignatureImg src={p.signature} />
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  );
 }
 
 export default async function ImpressionPage({
@@ -65,10 +142,8 @@ export default async function ImpressionPage({
   const cotChiens = Number(cahier.cotisationChiens);
   // Afficher la colonne dès qu'un montant est réglé OU qu'un participant a
   // coché la cotisation (pour toujours savoir qui a participé).
-  const showChasse =
-    cotChasse > 0 || pointages.some((p) => p.cotisationChasse);
-  const showChiens =
-    cotChiens > 0 || pointages.some((p) => p.cotisationChiens);
+  const showChasse = cotChasse > 0 || pointages.some((p) => p.cotisationChasse);
+  const showChiens = cotChiens > 0 || pointages.some((p) => p.cotisationChiens);
   const hasCotisations = showChasse || showChiens;
   const totalRecolte = pointages.reduce(
     (sum, p) =>
@@ -77,6 +152,8 @@ export default async function ImpressionPage({
       (p.cotisationChiens ? cotChiens : 0),
     0,
   );
+
+  const { participants, traqueurs } = splitPresents(pointages, invitesRows);
 
   const president = bureau.find((b) => b.role === "PRESIDENT");
   const responsableNom = detail.responsablePrenom
@@ -164,8 +241,8 @@ export default async function ImpressionPage({
             pour l&apos;organisation de la battue à {responsableNom} pour la
             saison de chasse {cahier.saison} pour la journée du{" "}
             {formatDateLong(battue.date)}. Les responsabilités inhérentes à
-            l&apos;organisation de la battue
-            incombent au délégué. Fait à {battue.lieu || "…"}.
+            l&apos;organisation de la battue incombent au délégué. Fait à{" "}
+            {battue.lieu || "…"}.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-4">
             <div>
@@ -184,72 +261,36 @@ export default async function ImpressionPage({
         </section>
       ) : null}
 
-      <section className="mb-5 break-inside-avoid">
-        <h3 className="mb-1 font-bold">
-          Pointage des participants ({pointages.length})
+      {/* Pas de break-inside-avoid : le pointage suit directement sur la
+          première page et se poursuit sur les suivantes (en-têtes répétés). */}
+      <section className="mb-5">
+        <h3 className="mb-1 font-bold break-after-avoid">
+          Pointage des participants ({participants.length})
         </h3>
-        <p className="mb-1 text-xs italic">
+        <p className="mb-1 text-xs italic break-after-avoid">
           En signant, tous les signataires reconnaissent avoir pris connaissance
           des consignes de sécurité.
         </p>
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-black text-left">
-              <th className="py-1">Nom</th>
-              <th className="py-1">Téléphone</th>
-              <th className="py-1">Permis</th>
-              <th className="py-1">Validation</th>
-              <th className="py-1">Assurance</th>
-              <th className="py-1">Rôle</th>
-              {showChasse ? <th className="py-1">Chasse</th> : null}
-              {showChiens ? <th className="py-1">Chiens</th> : null}
-              <th className="py-1">Signature</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pointages.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="py-2 text-gray-500">
-                  Aucun pointage.
-                </td>
-              </tr>
-            ) : (
-              // Postés, puis traqueurs, puis accompagnants (tri stable).
-              [...pointages]
-                .sort(
-                  (a, b) =>
-                    (ROLE_ORDER[a.role] ?? 0) - (ROLE_ORDER[b.role] ?? 0),
-                )
-                .map((p) => (
-                <tr key={p.participantId} className="border-b border-gray-300">
-                  <td className="py-1">
-                    {p.nom.toUpperCase()} {p.prenom}
-                  </td>
-                  <td className="py-1">{p.telephone ?? "—"}</td>
-                  <td className="py-1">{p.numPermis ?? "—"}</td>
-                  <td className="py-1">{p.numValidation ?? "—"}</td>
-                  <td className="py-1">
-                    {p.nomAssurance || p.numAssurance
-                      ? [p.nomAssurance, p.numAssurance]
-                          .filter(Boolean)
-                          .join(" · ")
-                      : "—"}
-                  </td>
-                  <td className="py-1">{ROLE_LABEL[p.role]}</td>
-                  {showChasse ? (
-                    <td className="py-1">{p.cotisationChasse ? "✓" : "X"}</td>
-                  ) : null}
-                  {showChiens ? (
-                    <td className="py-1">{p.cotisationChiens ? "✓" : "X"}</td>
-                  ) : null}
-                  <td className="py-1">
-                    <SignatureImg src={p.signature} />
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <PresentsTable
+          rows={participants}
+          showRole
+          showChasse={showChasse}
+          showChiens={showChiens}
+          vide="Aucun pointage."
+        />
+      </section>
+
+      <section className="mb-5">
+        <h3 className="mb-1 font-bold break-after-avoid">
+          Traqueurs ({traqueurs.length})
+        </h3>
+        <PresentsTable
+          rows={traqueurs}
+          showRole={false}
+          showChasse={showChasse}
+          showChiens={showChiens}
+          vide="Aucun traqueur."
+        />
         {hasCotisations ? (
           <p className="mt-2 text-sm font-bold">
             Total cotisations récoltées : {formatEuro(totalRecolte)}
@@ -259,44 +300,6 @@ export default async function ImpressionPage({
           </p>
         ) : null}
       </section>
-
-      {invitesRows.length > 0 ? (
-        <section className="mb-5 break-inside-avoid">
-          <h3 className="mb-1 font-bold">Invités ({invitesRows.length})</h3>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-black text-left">
-                <th className="py-1">Nom</th>
-                <th className="py-1">Permis</th>
-                <th className="py-1">Validation</th>
-                <th className="py-1">Assurance</th>
-                <th className="py-1">Poste</th>
-                <th className="py-1">Invité par</th>
-                <th className="py-1">Signature</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invitesRows.map(({ invite, parrainPrenom, parrainNom }) => (
-                <tr key={invite.id} className="border-b border-gray-300">
-                  <td className="py-1">
-                    {invite.nom.toUpperCase()} {invite.prenom}
-                  </td>
-                  <td className="py-1">{invite.numPermis ?? "—"}</td>
-                  <td className="py-1">{invite.numValidation ?? "—"}</td>
-                  <td className="py-1">{invite.numAssurance ?? "—"}</td>
-                  <td className="py-1">{ROLE_LABEL[invite.role]}</td>
-                  <td className="py-1">
-                    {parrainPrenom ? `${parrainPrenom} ${parrainNom}` : "—"}
-                  </td>
-                  <td className="py-1">
-                    <SignatureImg src={invite.signature} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      ) : null}
 
       <section className="break-inside-avoid">
         <h3 className="mb-1 font-bold">
@@ -327,7 +330,9 @@ export default async function ImpressionPage({
                   <td className="py-1">{p.numBracelet ?? "—"}</td>
                   <td className="py-1">{p.age ?? "—"}</td>
                   <td className="py-1">{p.sexe ? SEXE_LABEL[p.sexe] : "—"}</td>
-                  <td className="py-1">{p.poids ? `${p.poids} kg` : "—"}</td>
+                  <td className="py-1">
+                    {poidsValide(p.poids) ? `${p.poids} kg` : "—"}
+                  </td>
                   <td className="py-1">{p.tireurNom ?? "—"}</td>
                 </tr>
               ))

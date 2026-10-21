@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { getBattue } from "@/features/battues/queries";
 import { getCahier } from "@/features/cahiers/queries";
+import { splitPresents } from "@/features/export/battue-presents";
 import { buildBattueWorkbook } from "@/features/export/xlsx";
 import { listInvites } from "@/features/invites/queries";
 import { listPointagesDetailed } from "@/features/pointages/queries";
@@ -40,27 +41,7 @@ export async function GET(
         ? `${detail.responsablePrenom} ${detail.responsableNom}`
         : null,
     },
-    pointages.map((p) => ({
-      prenom: p.prenom,
-      nom: p.nom,
-      telephone: p.telephone,
-      numPermis: p.numPermis,
-      numValidation: p.numValidation,
-      numAssurance: p.numAssurance,
-      nomAssurance: p.nomAssurance,
-      role: p.role,
-      cotisationChasse: p.cotisationChasse,
-      cotisationChiens: p.cotisationChiens,
-    })),
-    invitesRows.map(({ invite, parrainPrenom, parrainNom }) => ({
-      prenom: invite.prenom,
-      nom: invite.nom,
-      numPermis: invite.numPermis,
-      numValidation: invite.numValidation,
-      numAssurance: invite.numAssurance,
-      role: invite.role,
-      parrain: parrainPrenom ? `${parrainPrenom} ${parrainNom}` : "",
-    })),
+    splitPresents(pointages, invitesRows),
     prelevements.map((p) => ({
       espece: p.espece,
       numBracelet: p.numBracelet,

@@ -121,6 +121,7 @@ const morceaux = z.preprocess(
 const updateSchema = cahierSchema.extend({
   id: z.string().uuid(),
   especes: z.array(z.string().trim().min(1)).default([]),
+  especesDecoupees: z.array(z.string().trim().min(1)).default([]),
   reglesSecurite: z.string().trim().default(""),
   cotisationChasse: montant,
   cotisationChiens: montant,
@@ -139,6 +140,7 @@ export async function updateCahier(
     territoire: formData.get("territoire") ?? "",
     saison: formData.get("saison"),
     especes: especesRaw,
+    especesDecoupees: formData.getAll("especesDecoupees").map(String),
     reglesSecurite: formData.get("reglesSecurite") ?? "",
     cotisationChasse: formData.get("cotisationChasse") ?? "",
     cotisationChiens: formData.get("cotisationChiens") ?? "",
@@ -152,6 +154,10 @@ export async function updateCahier(
   const especes = Array.from(
     new Set(parsed.data.especes.map((e) => e.trim()).filter(Boolean)),
   );
+  // Espèces découpées : uniquement parmi les espèces chassables du cahier.
+  const especesDecoupees = Array.from(
+    new Set(parsed.data.especesDecoupees.map((e) => e.trim())),
+  ).filter((e) => especes.includes(e));
   // Morceaux : dédoublonnage par code.
   const morceaux = parsed.data.morceaux.filter(
     (m, i, arr) => arr.findIndex((x) => x.code === m.code) === i,
@@ -164,6 +170,7 @@ export async function updateCahier(
       territoire: parsed.data.territoire,
       saison: parsed.data.saison,
       especes,
+      especesDecoupees,
       reglesSecurite: parsed.data.reglesSecurite,
       cotisationChasse: parsed.data.cotisationChasse,
       cotisationChiens: parsed.data.cotisationChiens,
@@ -280,6 +287,7 @@ export async function dupliquerSaison(formData: FormData) {
       territoire: source.territoire,
       saison,
       especes: source.especes,
+      especesDecoupees: source.especesDecoupees,
       reglesSecurite: source.reglesSecurite,
       cotisationChasse: source.cotisationChasse,
       cotisationChiens: source.cotisationChiens,

@@ -1,0 +1,1 @@
+ALTER TABLE "cahiers" ADD COLUMN "especes_decoupees" text[] DEFAULT ARRAY['Chevreuil','Cerf','Sanglier']::text[] NOT NULL;

@@ -7,6 +7,7 @@ import type {
   SyncDistribution,
   SyncInviteParticipation,
   SyncInvitePerson,
+  SyncNewInvite,
   SyncParticipant,
   SyncPointage,
   SyncPrelevement,
@@ -33,6 +34,17 @@ export type LocalPointage = SyncPointage & {
 export type LocalInviteParticipation = SyncInviteParticipation & {
   dirty: 0 | 1;
 };
+/**
+ * Invité créé localement, en attente de création serveur. Supprimé dès que
+ * l'instantané serveur le contient (il rejoint alors `meta.invitePersons`).
+ */
+export type LocalNewInvite = SyncNewInvite & {
+  battueId: string;
+  /** Nom du parrain, pour l'affichage avant synchro. */
+  parrainNom: string | null;
+  parrainPrenom: string | null;
+  dirty: 0 | 1;
+};
 export type LocalPrelevement = SyncPrelevement & { dirty: 0 | 1 };
 export type LocalParticipant = SyncParticipant & {
   /** Clé locale unique par battue : `${battueId}:${id}`. */
@@ -57,6 +69,7 @@ class BattueDB extends Dexie {
   participants!: Table<LocalParticipant, string>;
   distributions!: Table<LocalDistribution, string>;
   inviteParticipations!: Table<LocalInviteParticipation, string>;
+  newInvites!: Table<LocalNewInvite, string>;
 
   constructor() {
     super("cahier-battue");
@@ -81,6 +94,10 @@ class BattueDB extends Dexie {
     this.version(4).stores({
       invites: null,
       inviteParticipations: "id, battueId, dirty",
+    });
+    // v5 : création d'invités hors-ligne (en attente de synchro).
+    this.version(5).stores({
+      newInvites: "id, battueId, dirty",
     });
   }
 }
