@@ -28,6 +28,11 @@ export function formatDateLong(dateStr: string) {
   return format(parseISO(dateStr), "EEEE d MMMM yyyy", { locale: fr });
 }
 
+/** "2025-11-15" -> "15 novembre 2025" (dates de publication). */
+export function formatDateSimple(dateStr: string) {
+  return format(parseISO(dateStr), "d MMMM yyyy", { locale: fr });
+}
+
 /** "2025-11-15" -> "sam. 15 nov.". */
 export function formatDateShort(dateStr: string) {
   return format(parseISO(dateStr), "EEE d MMM", { locale: fr });

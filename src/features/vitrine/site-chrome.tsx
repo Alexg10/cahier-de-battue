@@ -13,7 +13,7 @@ export const ctaBlaze =
 const NAV = [
   { href: "/#fonctionnalites", label: "Fonctionnalités" },
   { href: "/guide", label: "Guide" },
-  { href: "/#hors-ligne", label: "Hors réseau" },
+  { href: "/articles", label: "Articles" },
   { href: "/#faq", label: "FAQ" },
 ];
 
@@ -113,6 +113,15 @@ function SiteFooter() {
           <div className="flex flex-wrap gap-5">
             <Link href="/guide" className="hover:text-foreground">
               Guide
+            </Link>
+            <Link href="/articles" className="hover:text-foreground">
+              Articles
+            </Link>
+            <Link
+              href="/modele-carnet-de-battue"
+              className="hover:text-foreground"
+            >
+              Modèle de carnet
             </Link>
             <Link href="/mentions-legales" className="hover:text-foreground">
               Mentions légales

@@ -16,6 +16,8 @@ import {
 import Link from "next/link";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import { ArticleCard, articlesRecents } from "./article-card";
+import { ARTICLES } from "./articles";
 import { GUIDES } from "./guides";
 import { PhoneMockup } from "./phone-mockup";
 import { container, ctaBlaze, Eyebrow, VitrineShell } from "./site-chrome";
@@ -504,6 +506,29 @@ export function LandingPage() {
                 <span className="text-[15px] text-ink-muted">{description}</span>
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* ============ ARTICLES ============ */}
+        <section className="border-y border-border bg-card">
+          <div className={cn(container, "py-24")}>
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-[720px]">
+                <Eyebrow>Articles</Eyebrow>
+                <h2 className={h2}>Bien organiser ses battues.</h2>
+              </div>
+              <Link href="/articles" className="inline-flex items-center gap-2 font-semibold text-primary hover:text-foreground">
+                Tous les articles
+                <ArrowRight className="size-5" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-5">
+              {articlesRecents(ARTICLES)
+                .slice(0, 3)
+                .map((a) => (
+                  <ArticleCard key={a.slug} article={a} className="bg-background" />
+                ))}
+            </div>
           </div>
         </section>
 

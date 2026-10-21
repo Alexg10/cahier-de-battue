@@ -51,29 +51,36 @@ function FilAriane({ miettes }: { miettes: Miette[] }) {
   );
 }
 
-/** En-tête + corps d'une page de contenu, en colonne de lecture. */
+/**
+ * En-tête + corps d'une page de contenu : en colonne de lecture par défaut,
+ * ou sur toute la largeur du site (`large`) pour les listes en cartes.
+ */
 export function ContentPage({
   miettes,
   eyebrow,
   titre,
   intro,
+  large = false,
   children,
 }: {
   miettes: Miette[];
   eyebrow?: string;
   titre: string;
   intro?: React.ReactNode;
+  large?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <main className={cn(container, "max-w-[820px] py-14")}>
+    <main className={cn(container, !large && "max-w-[820px]", "py-14")}>
       <FilAriane miettes={miettes} />
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
       <h1 className="font-display text-[clamp(38px,5vw,60px)] leading-[0.98] font-extrabold uppercase">
         {titre}
       </h1>
       {intro ? (
-        <p className="mt-5 text-xl leading-normal text-ink-soft">{intro}</p>
+        <p className="mt-5 max-w-[760px] text-xl leading-normal text-ink-soft">
+          {intro}
+        </p>
       ) : null}
       <div className="mt-10 flex flex-col gap-10">{children}</div>
     </main>

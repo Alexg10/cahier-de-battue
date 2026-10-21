@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { ARTICLES } from "@/features/vitrine/articles";
 import { GUIDES } from "@/features/vitrine/guides";
 import { SITE_URL } from "@/lib/site";
 
@@ -25,6 +26,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
+    {
+      url: `${SITE_URL}/articles`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...ARTICLES.map((a) => ({
+      url: `${SITE_URL}/articles/${a.slug}`,
+      lastModified: a.modifieLe,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+    {
+      url: `${SITE_URL}/modele-carnet-de-battue`,
+      changeFrequency: "yearly",
+      priority: 0.6,
+    },
     {
       url: `${SITE_URL}/mentions-legales`,
       changeFrequency: "yearly",
